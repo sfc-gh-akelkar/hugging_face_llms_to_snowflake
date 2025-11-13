@@ -76,7 +76,7 @@ This architecture means:
 - ✅ **BAA coverage**: Snowflake BAA covers entire data flow
 - ✅ **Access control**: Standard Snowflake RBAC applies
 - ✅ **Audit logging**: All operations in Snowflake query history
-- ✅ **Encryption**: Snowflake encryption at rest/in transit
+- ✅ **Encryption**: Automatic AES-256 at rest, TLS 1.2+ in transit
 - ✅ **No third-party processors**: No additional BAAs needed
 
 ---
@@ -119,39 +119,17 @@ This architecture means:
 
 ### 1. Account-Level Security
 
-```sql
--- Require MFA for all users
-ALTER ACCOUNT SET REQUIRE_MFA = TRUE;
-
--- Set minimum password complexity
-ALTER ACCOUNT SET PASSWORD_MIN_LENGTH = 12;
-ALTER ACCOUNT SET PASSWORD_REQUIRE_UPPERCASE = TRUE;
-ALTER ACCOUNT SET PASSWORD_REQUIRE_LOWERCASE = TRUE;
-ALTER ACCOUNT SET PASSWORD_REQUIRE_NUMBER = TRUE;
-ALTER ACCOUNT SET PASSWORD_REQUIRE_SPECIAL_CHAR = TRUE;
-
--- Session timeout (15 minutes of inactivity)
-ALTER ACCOUNT SET CLIENT_SESSION_KEEP_ALIVE = FALSE;
-ALTER ACCOUNT SET CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY = 900;
-
--- Network policies (whitelist IPs)
-CREATE NETWORK POLICY HOSPITAL_NETWORK_POLICY
-    ALLOWED_IP_LIST = ('10.0.0.0/8', '172.16.0.0/12')
-    BLOCKED_IP_LIST = ();
-
-ALTER ACCOUNT SET NETWORK_POLICY = HOSPITAL_NETWORK_POLICY;
-```
+**Note**: Account-level security settings (MFA, password policies, network policies) are assumed to be configured following organizational best practices. This section focuses on application-specific security.
 
 ### 2. Database-Level Security
 
 ```sql
--- Enable encryption for all stages
-CREATE STAGE HF_MODEL_STAGE
-    ENCRYPTION = (TYPE = 'SNOWFLAKE_SSE');
-
 -- Enable change tracking for audit
 ALTER DATABASE PEDIATRIC_ML 
     SET DATA_RETENTION_TIME_IN_DAYS = 7;
+    
+-- Note: Encryption is automatic in Snowflake
+-- All data is encrypted at rest (AES-256) and in transit (TLS 1.2+)
 
 -- Tag PII/PHI columns
 CREATE TAG PHI_TAG;

@@ -61,15 +61,15 @@ USE SCHEMA MODELS;
 
 -- Internal stage for HuggingFace models
 CREATE STAGE IF NOT EXISTS HF_MODEL_STAGE
-    ENCRYPTION = (TYPE = 'SNOWFLAKE_SSE')
     DIRECTORY = (ENABLE = TRUE)
     COMMENT = 'Stage for storing HuggingFace model files';
 
 -- Stage for model inference packages
 CREATE STAGE IF NOT EXISTS MODEL_CODE_STAGE
-    ENCRYPTION = (TYPE = 'SNOWFLAKE_SSE')
     DIRECTORY = (ENABLE = TRUE)
     COMMENT = 'Stage for Python inference code and dependencies';
+    
+-- Note: Encryption is automatic in Snowflake (at rest and in transit)
 
 -- ----------------------------------------------------------------------------
 -- 4. Create File Formats
@@ -89,24 +89,10 @@ CREATE FILE FORMAT IF NOT EXISTS JSON_FORMAT
     STRIP_OUTER_ARRAY = TRUE;
 
 -- ----------------------------------------------------------------------------
--- 5. Create Network Rule for HuggingFace Access (if needed)
+-- 5. Create Roles and Grant Permissions
 -- ----------------------------------------------------------------------------
 
--- Note: Business Critical edition supports network rules for egress
-CREATE OR REPLACE NETWORK RULE HF_HUB_RULE
-    TYPE = 'HOST_PORT'
-    MODE = 'EGRESS'
-    VALUE_LIST = ('huggingface.co', 'cdn.huggingface.co')
-    COMMENT = 'Allow access to HuggingFace Hub for model downloads';
-
-CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION HF_INTEGRATION
-    ALLOWED_NETWORK_RULES = (HF_HUB_RULE)
-    ENABLED = TRUE
-    COMMENT = 'External access integration for HuggingFace Hub';
-
--- ----------------------------------------------------------------------------
--- 6. Create Roles and Grant Permissions
--- ----------------------------------------------------------------------------
+-- Note: Network policies and rules assumed to be configured at account level
 
 -- Create role for ML engineers
 CREATE ROLE IF NOT EXISTS ML_ENGINEER;
@@ -135,7 +121,7 @@ GRANT USAGE ON SCHEMA PEDIATRIC_ML.ML_RESULTS TO ROLE CLINICAL_USER;
 GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
 
 -- ----------------------------------------------------------------------------
--- 7. Enable Model Registry
+-- 6. Enable Model Registry
 -- ----------------------------------------------------------------------------
 
 -- Model registry is automatically enabled in Business Critical edition
@@ -143,7 +129,7 @@ GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
 SHOW PARAMETERS LIKE 'ENABLE_MODEL_REGISTRY' IN ACCOUNT;
 
 -- ----------------------------------------------------------------------------
--- 8. Set Up Resource Monitors (Optional but Recommended)
+-- 7. Set Up Resource Monitors (Optional but Recommended)
 -- ----------------------------------------------------------------------------
 
 CREATE RESOURCE MONITOR IF NOT EXISTS ML_MONTHLY_MONITOR
