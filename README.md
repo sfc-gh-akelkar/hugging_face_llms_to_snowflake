@@ -1,243 +1,105 @@
-# Medpace inSitE - Snowflake Optimization
+# Importing HuggingFace Models into Snowflake for Pediatric Hospital Use Cases
 
-This repository contains the analysis and implementation guide for optimizing Medpace's **inSitE** (Informatics Site Engine) application by moving data processing from R/Shiny to Snowflake.
+## Overview
+This repository contains a complete, self-contained solution for importing three HuggingFace models into Snowflake's Model Registry and deploying them for pediatric hospital clinical use cases.
 
-## 📁 Repository Contents
+### 🔒 Critical Security Feature
+**ALL DATA STAYS IN SNOWFLAKE** - PHI never leaves your Snowflake account. Models run as Snowpark Container Services within your infrastructure. No external API calls with patient data. This addresses a major HIPAA compliance requirement.
 
-### 📄 Documentation
+## Models Included
+1. **sentence-transformers/all-MiniLM-L6-v2** - Semantic text search and similarity
+2. **microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224** - Biomedical image-text classification
+3. **dmis-lab/biobert-v1.1** - Biomedical named entity recognition and text analysis
 
-**[Medpace_inSitE_Optimization_Summary.md](./Medpace_inSitE_Optimization_Summary.md)**
-- Executive summary with performance improvements
-- Current architecture bottlenecks with real code examples
-- Before/after comparisons showing code simplification
-- Dynamic Tables vs SQL Functions decision framework
-- Implementation timeline and discussion questions
+## Use Cases
+- **Clinical Notes Semantic Search**: Find similar patient cases based on clinical notes
+- **Oncology Treatment Matching**: Match pediatric oncology patients to similar historical cases
+- **Medical Entity Extraction**: Extract medications, symptoms, diagnoses from clinical notes
+- **Medical Image Classification**: Classify pediatric radiology images and histopathology
 
-**[Cortex_REST_API_Optimization.md](./Cortex_REST_API_Optimization.md)**
-- Optimize Cortex LLM calls to eliminate warehouse costs
-- Before/after code comparison for cluster interpretation
-- Switch from ODBC SQL approach to direct REST API
-- Enhanced prompt for better AI responses
-
-**[cortex_api_parser.R](./cortex_api_parser.R)** & **[cortex_api_example.R](./cortex_api_example.R)**
-- Helper functions to parse Cortex REST API responses
-- Handle multiple response formats automatically
-- Extract text, usage stats, and metadata
-- Shiny app integration examples
-
-### 🔧 Implementation
-
-**[Medpace_inSitE_Snowflake_Implementation.ipynb](./Medpace_inSitE_Snowflake_Implementation.ipynb)**
-- Production-ready Snowflake notebook with 8 implementation steps
-- Dynamic Tables for core metrics (auto-refreshing, <1 second queries)
-- SQL Functions for user-specific operations
-- Stored Procedures for ML models and Monte Carlo simulations
-- Complete monitoring and maintenance queries
-- R code examples for integration
-
-### 📊 Reference Data
-
-**[app (2).R](./app%20(2).R)**
-- Original R Shiny application (3,808 lines)
-- Shows current data processing approach
-- Identifies specific bottlenecks addressed by optimization
-
-**Table Statistics:**
-- `SnowflakeQueryResults.xlsx - gb.csv` - Actual table sizes from Medpace Snowflake
-- `SnowflakeQueryResults.xlsx - rows added.csv` - Table row counts and update frequency
-
----
-
-## 🎯 Executive Summary
-
-### Current State
-- **16 million rows (730 MB)** loaded into R per analysis
-- **2-3 GB memory** per user session
-- **3-6 minutes** per analysis
-- **5-10 concurrent users** max capacity
-
-### After Optimization
-- **<5 MB** data transfer per query
-- **100-200 MB memory** per session
-- **15-25 seconds** per analysis
-- **50-100+ concurrent users** capacity
-
-### Performance Improvements
-
-| Component | Current | After Optimization | Improvement |
-|-----------|---------|-------------------|-------------|
-| **Data Collation** | 30-60 sec | <1 sec (Dynamic Table) | **30-60x faster** |
-| **Monte Carlo (10K)** | 2-5 min | 5-10 sec | **20-30x faster** |
-| **Full Analysis** | 3-6 min | 15-25 sec | **12-18x faster** |
-| **Memory Usage** | 2-3 GB | 100-200 MB | **95% reduction** |
-
----
-
-## 🏗️ Architecture Overview
-
-### Recommended Hybrid Approach
-
+## Repository Structure
 ```
-┌─────────────────────────────────────┐
-│         SNOWFLAKE                   │
-├─────────────────────────────────────┤
-│                                     │
-│  Dynamic Tables (90% of queries)   │
-│  └─ site_metrics_base              │
-│     • TARGET_LAG = '1 hour'        │
-│     • REFRESH_MODE = 'INCREMENTAL' │
-│     • Query time: <1 second ✓      │
-│                                     │
-│  SQL Functions (10% of queries)    │
-│  └─ User-specific filters          │
-│     • Custom study codes           │
-│     • Query time: 1-2 seconds      │
-│                                     │
-│  Stored Procedures (ML/complex)    │
-│  └─ Monte Carlo simulations        │
-│  └─ K-means clustering             │
-└─────────────────────────────────────┘
-         ↓ <5 MB transfer
-┌─────────────────────────────────────┐
-│      R SHINY APP                    │
-│  Only UI and visualization          │
-└─────────────────────────────────────┘
+├── README.md                          # This file
+├── QUICKSTART.md                      # Quick start guide - start here!
+├── 01_setup_environment.sql           # Snowflake environment setup
+├── 02_create_mock_data.sql            # Generate mock Clarity/Caboodle data
+├── 03_import_models_via_ui.md         # Import models via Snowsight UI
+├── 04_use_case_semantic_search.sql    # Use case: Clinical notes search
+├── 05_use_case_oncology_matching.sql  # Use case: Patient similarity
+├── 06_use_case_entity_extraction.sql  # Use case: NER from notes
+├── IMPORT_GUIDE.md                    # Detailed technical guide
+├── SECURITY_CONSIDERATIONS.md         # PHI handling and compliance
+└── requirements.txt                   # Python dependencies (minimal)
 ```
 
----
+## Quick Start
 
-## 🚀 Quick Start
+### Prerequisites
+- Snowflake Business Critical Edition account
+- ACCOUNTADMIN or role with MODEL REGISTRY privileges
+- Python 3.8+ with Snowpark
+- Network access to HuggingFace Hub
 
-### 1. Review Documentation
-Start with [`Medpace_inSitE_Optimization_Summary.md`](./Medpace_inSitE_Optimization_Summary.md) to understand:
-- Why the current architecture is inefficient
-- What changes are needed
-- Expected benefits
-
-### 2. Implement in Snowflake
-Use [`Medpace_inSitE_Snowflake_Implementation.ipynb`](./Medpace_inSitE_Snowflake_Implementation.ipynb):
-- Import into Snowflake Notebooks and run cell-by-cell
-- Each section has detailed markdown explanations
-- Includes testing and monitoring queries
-
-### 3. Update R Application
-- Replace data processing with simple queries to Dynamic Tables
-- Add function calls for user-specific operations
-- Optimize Cortex LLM calls using REST API (see [`Cortex_REST_API_Optimization.md`](./Cortex_REST_API_Optimization.md))
-- See R code examples at the end of implementation notebook
-
----
-
-## 📋 Implementation Checklist
-
-### Phase 1: Setup
-- [ ] Enable change tracking on base tables
-- [ ] Create `CLINOPS_TRANSFORM_WH` warehouse
-- [ ] Create `site_metrics_base` Dynamic Table
-- [ ] Monitor initial refresh
-
-### Phase 2: Testing
-- [ ] Test query performance (<1 second?)
-- [ ] Verify data accuracy
-- [ ] Monitor refresh performance
-- [ ] Adjust `TARGET_LAG` if needed
-
-### Phase 3: Functions & Procedures
-- [ ] Create SQL Functions for custom filters
-- [ ] Create Stored Procedure for Monte Carlo
-- [ ] Test from R application
-
-### Phase 4: Production
-- [ ] Update R app to query new objects
-- [ ] Optimize Cortex LLM calls (REST API vs ODBC)
-- [ ] Parallel testing (old vs new)
-- [ ] User acceptance testing
-- [ ] Production deployment
-
----
-
----
-
-## 🔍 Key Decisions
-
-### Dynamic Tables vs SQL Functions
-
-**Use Dynamic Tables for:**
-- ✅ Site performance metrics (queried frequently)
-- ✅ Core aggregations (changes predictably)
-- ✅ Shared across multiple users
-- ✅ Heavy joins and aggregations
-
-**Use SQL Functions for:**
-- ✅ User-entered custom study codes
-- ✅ Dynamic filtering (parameters change per query)
-- ✅ Always need real-time data
-
-### Setting TARGET_LAG
-
-| Data Type | Update Frequency | Recommended TARGET_LAG |
-|-----------|------------------|------------------------|
-| Site performance | Daily | `1-2 hours` |
-| Study relationships | Weekly | `12-24 hours` |
-| Historical data | Monthly | `1-2 days` |
-
-**Monitor and adjust:**
+### Step 1: Setup Snowflake Environment
 ```sql
-SELECT 
-    target_lag_sec / 60 as target_minutes,
-    actual_lag_sec / 60 as actual_minutes
-FROM TABLE(INFORMATION_SCHEMA.DYNAMIC_TABLES('site_metrics_base'));
+-- Run 01_setup_environment.sql
+-- Creates database, schemas, warehouses, and stages
 ```
 
----
+### Step 2: Create Mock Test Data
+```sql
+-- Run 02_create_mock_data.sql
+-- Generates mock clinical data mimicking Clarity/Caboodle
+```
 
-## 📞 Support
+### Step 3: Import Models via Snowsight UI
+Follow the instructions in `03_import_models_via_ui.md` to import each model through the Snowflake UI:
+1. Go to **AI & ML** → **Models** → **Import model**
+2. Enter HuggingFace model handle
+3. Configure and deploy
 
-### Questions to Discuss
-1. **Data Freshness:** Can site metrics be 1-2 hours old?
-2. **User Concurrency:** How many simultaneous users?
-3. **Warehouse Sizing:** What size for refreshes?
-4. **Resource Planning:** Expected concurrent user load?
+**Models to import:**
+- `sentence-transformers/all-MiniLM-L6-v2` (semantic search)
+- `dmis-lab/biobert-v1.1` (entity extraction)
+- `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224` (image classification)
 
-### Next Steps
-- Schedule technical workshop with Snowflake team
-- Run proof of concept (Phase 1)
-- Measure actual performance improvements
-- Make go/no-go decision based on results
+**Time**: ~45-60 minutes total (mostly waiting for deployment)
 
----
+### Step 4: Run Use Cases
+```sql
+-- Clinical notes semantic search
+-- Run 04_use_case_semantic_search.sql
 
-## 📚 Additional Resources
+-- Oncology patient matching
+-- Run 05_use_case_oncology_matching.sql
 
-- [Snowflake Dynamic Tables Documentation](https://docs.snowflake.com/en/user-guide/dynamic-tables-intro)
-- [Snowflake Stored Procedures](https://docs.snowflake.com/en/sql-reference/stored-procedures)
-- [Snowpark Python](https://docs.snowflake.com/en/developer-guide/snowpark/python/index)
+-- Entity extraction
+-- Run 06_use_case_entity_extraction.sql
+```
 
----
+## Success Metrics
+- **Import Success Rate**: 100% of models successfully imported and registered
+- **Query Performance**: < 5 seconds for semantic search on 10K notes
+- **Accuracy**: > 85% precision on entity extraction
+- **User Adoption**: Clinicians able to run queries within 1 week of training
+- **Data Coverage**: Models process 100% of text-based clinical notes
 
-## 🏷️ Version History
+## Security & Compliance
+- All data remains within Snowflake Business Critical tier
+- End-to-end encryption for PHI
+- Row-level security for clinical data access
+- Audit logging enabled
+- See `SECURITY_CONSIDERATIONS.md` for complete details
 
-**v1.0** (October 2025)
-- Initial analysis and recommendations
-- Production-ready implementation notebook
-- Complete before/after documentation
+## Support
+For questions or issues, refer to the detailed guides:
+- `IMPORT_GUIDE.md` - Step-by-step model import instructions
+- `SECURITY_CONSIDERATIONS.md` - PHI and HIPAA compliance guidance
 
----
-
-## 👥 Contributors
-
-**Snowflake Solution Engineering Team**
-- Architecture design and recommendations
-- Implementation notebook development
-- Performance analysis
-
-**Medpace Team**
-- Original R/Shiny application
-- Requirements and use cases
-- Data environment details
-
----
-
-**License:** Internal Medpace/Snowflake collaboration  
-**Status:** Ready for implementation
+## Next Steps After PoC
+1. Validate with real de-identified clinical data
+2. Fine-tune models on pediatric-specific corpus
+3. Integrate with Clarity/Caboodle data pipelines
+4. Set up automated model retraining workflows
+5. Deploy to production with proper governance
 

@@ -1,0 +1,72 @@
+# ============================================================================
+# Python Requirements for HuggingFace Models in Snowflake
+# ============================================================================
+# NOTE: Models are now imported via Snowsight UI - no local Python needed!
+# These dependencies are OPTIONAL and only needed for:
+# - Custom development work
+# - Advanced testing
+# - Local experimentation
+# ============================================================================
+
+# Snowflake (only needed for custom Python development)
+snowflake-snowpark-python>=1.11.0
+snowflake-connector-python>=3.6.0
+
+# Optional - for local development/testing only
+pandas>=2.0.0
+python-dotenv>=1.0.0              # For environment variables
+
+# Optional - for Jupyter notebook development
+jupyter>=1.0.0                    # For notebooks
+ipython>=8.12.0
+matplotlib>=3.7.0                 # For visualizations
+
+# ============================================================================
+# Installation Notes
+# ============================================================================
+#
+# 1. Basic Installation:
+#    pip install -r requirements.txt
+#
+# 2. For CPU-only (smaller install):
+#    pip install torch --index-url https://download.pytorch.org/whl/cpu
+#    pip install -r requirements.txt
+#
+# 3. For GPU support (if available):
+#    pip install torch --index-url https://download.pytorch.org/whl/cu118
+#    pip install -r requirements.txt
+#
+# 4. Verify installation:
+#    python -c "import snowflake.snowpark; print('Snowpark:', snowflake.snowpark.__version__)"
+#    python -c "import transformers; print('Transformers:', transformers.__version__)"
+#    python -c "import sentence_transformers; print('Sentence Transformers OK')"
+#
+# ============================================================================
+# Version Notes
+# ============================================================================
+#
+# - torch: PyTorch 2.0+ required for latest transformer models
+# - transformers: 4.35+ includes BioBERT support
+# - snowflake-snowpark-python: 1.11+ for Model Registry features
+# - open-clip-torch: Specific version for BiomedCLIP compatibility
+#
+# ============================================================================
+# Snowflake UDF Package Requirements
+# ============================================================================
+#
+# When creating UDFs in Snowflake, specify these packages:
+#
+# For MiniLM embeddings:
+#   PACKAGES = ('sentence-transformers', 'torch', 'transformers', 'numpy')
+#
+# For BioBERT:
+#   PACKAGES = ('transformers', 'torch', 'numpy')
+#
+# For BiomedCLIP:
+#   PACKAGES = ('open-clip-torch', 'torch', 'transformers', 'Pillow', 'numpy')
+#
+# Note: Snowflake's Python environment may have package size limitations
+#       For large models, consider using external functions or Snowpark
+#
+# ============================================================================
+
