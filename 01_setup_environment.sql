@@ -147,57 +147,15 @@ ALTER WAREHOUSE ML_IMPORT_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
 ALTER WAREHOUSE ML_INFERENCE_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
 
 -- ----------------------------------------------------------------------------
--- 9. Create Helper Functions
+-- 9. Enable Cortex Search (for semantic search capabilities)
 -- ----------------------------------------------------------------------------
 
--- Cosine similarity function for embeddings
-CREATE OR REPLACE FUNCTION COSINE_SIMILARITY(vec1 ARRAY, vec2 ARRAY)
-RETURNS FLOAT
-LANGUAGE PYTHON
-RUNTIME_VERSION = '3.8'
-HANDLER = 'cosine_similarity'
-AS
-$$
-import numpy as np
+-- Note: Cortex Search is available in Snowflake and provides built-in semantic search
+-- No need to manually create embedding functions or compute similarity scores
+-- Cortex Search handles embeddings and indexing automatically
 
-def cosine_similarity(vec1, vec2):
-    """Calculate cosine similarity between two vectors"""
-    if not vec1 or not vec2:
-        return 0.0
-    
-    v1 = np.array(vec1)
-    v2 = np.array(vec2)
-    
-    # Handle zero vectors
-    norm1 = np.linalg.norm(v1)
-    norm2 = np.linalg.norm(v2)
-    
-    if norm1 == 0 or norm2 == 0:
-        return 0.0
-    
-    return float(np.dot(v1, v2) / (norm1 * norm2))
-$$;
-
--- Euclidean distance function
-CREATE OR REPLACE FUNCTION EUCLIDEAN_DISTANCE(vec1 ARRAY, vec2 ARRAY)
-RETURNS FLOAT
-LANGUAGE PYTHON
-RUNTIME_VERSION = '3.8'
-HANDLER = 'euclidean_distance'
-AS
-$$
-import numpy as np
-
-def euclidean_distance(vec1, vec2):
-    """Calculate Euclidean distance between two vectors"""
-    if not vec1 or not vec2:
-        return float('inf')
-    
-    v1 = np.array(vec1)
-    v2 = np.array(vec2)
-    
-    return float(np.linalg.norm(v1 - v2))
-$$;
+-- Verify Cortex Search is available
+SHOW FUNCTIONS LIKE 'SNOWFLAKE.CORTEX%' IN ACCOUNT;
 
 -- ----------------------------------------------------------------------------
 -- 10. Create Audit Tables
@@ -237,11 +195,6 @@ SHOW DATABASES LIKE 'PEDIATRIC_ML';
 SHOW SCHEMAS IN DATABASE PEDIATRIC_ML;
 SHOW WAREHOUSES LIKE '%ML%';
 SHOW STAGES IN SCHEMA PEDIATRIC_ML.MODELS;
-
--- Test helper functions
-SELECT COSINE_SIMILARITY([1,2,3], [1,2,3]) AS perfect_match;  -- Should return 1.0
-SELECT COSINE_SIMILARITY([1,0,0], [0,1,0]) AS orthogonal;     -- Should return 0.0
-SELECT EUCLIDEAN_DISTANCE([0,0,0], [3,4,0]) AS distance_5;    -- Should return 5.0
 
 -- Display summary
 SELECT 'Environment setup complete!' AS STATUS,

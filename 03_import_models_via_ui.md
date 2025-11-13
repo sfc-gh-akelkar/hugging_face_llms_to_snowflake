@@ -47,63 +47,32 @@ GRANT USAGE, MONITOR ON COMPUTE POOL ML_INFERENCE_POOL TO ROLE ML_ENGINEER;
 
 ---
 
-## Model 1: sentence-transformers/all-MiniLM-L6-v2
+## ⭐ Semantic Search: Use Cortex Search (No Import Needed!)
 
-### Purpose
-- **Use Case**: Semantic search, clinical note similarity
-- **Output**: 384-dimensional embeddings
-- **Task Type**: Feature Extraction
+For semantic search of clinical notes, use **Snowflake Cortex Search** instead of importing a model:
 
-### Import Steps
+```sql
+-- Create Cortex Search Service (see 04_use_case_semantic_search.sql for full example)
+CREATE CORTEX SEARCH SERVICE CLINICAL_NOTES_SEARCH
+ON NOTE_TEXT
+WAREHOUSE = ML_INFERENCE_WH
+TARGET_LAG = '1 hour'
+AS (
+    SELECT NOTE_ID, PATIENT_ID, NOTE_TEXT, DEPARTMENT, PRIMARY_DIAGNOSIS
+    FROM CLINICAL_DATA.CLINICAL_NOTES
+);
+```
 
-1. **Navigate to Models**
-   - In Snowsight, go to **AI & ML** → **Models**
-   - Click **Import model**
-
-2. **Configure Model Import**
-   
-   **Model Details:**
-   - **Model handle**: `sentence-transformers/all-MiniLM-L6-v2`
-   - **Task**: Select **Feature Extraction** (or **Sentence Similarity**)
-   - **Trust remote code**: Leave unchecked (not needed)
-   - **Hugging Face token secret**: Leave empty (public model)
-   
-   **Advanced Settings (optional):**
-   - **Tokenizer model**: Leave default
-   - **Hyperparameters**: None needed
-
-3. **Registry Settings**
-   
-   - **Model name**: `MINILM_EMBEDDINGS`
-   - **Version name**: `v1`
-   - **Database**: `PEDIATRIC_ML`
-   - **Schema**: `MODELS`
-   
-   **Advanced Settings:**
-   - **Pip requirements**: None needed
-   - **Comment**: `Sentence embeddings for clinical notes semantic search`
-
-4. **Deployment Configuration**
-   
-   - **Service name**: `MINILM_EMBEDDINGS_SERVICE`
-   - **Create REST API endpoint**: ✅ Check this
-   - **Compute pool**: Select `ML_INFERENCE_POOL`
-   - **Number of instances**: `1` (start small)
-   
-   **Advanced Settings (for CPU):**
-   - **Number of workers**: `2`
-   - **Max batch rows**: `100`
-   - **CPU**: `2000` (2 cores)
-   - **Memory**: `8Gi`
-
-5. **Deploy**
-   - Click **Deploy**
-   - Note the Query ID for monitoring
-   - Deployment takes 10-15 minutes
+**Benefits:**
+- ✅ No model import needed
+- ✅ Automatic embeddings and indexing
+- ✅ Simpler queries
+- ✅ Better performance
+- ✅ Auto-refreshes when data changes
 
 ---
 
-## Model 2: dmis-lab/biobert-v1.1
+## Model 1: dmis-lab/biobert-v1.1
 
 ### Purpose
 - **Use Case**: Biomedical entity extraction, clinical NLP
@@ -153,7 +122,7 @@ GRANT USAGE, MONITOR ON COMPUTE POOL ML_INFERENCE_POOL TO ROLE ML_ENGINEER;
 
 ---
 
-## Model 3: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
+## Model 2: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
 
 ### Purpose
 - **Use Case**: Medical image classification (X-rays, MRI, pathology)

@@ -17,12 +17,13 @@ This is the most important security aspect of this solution:
 
 See `SECURITY_CONSIDERATIONS.md` for complete details.
 
-### The Three Models
+### Models & Services
 
-1. **sentence-transformers/all-MiniLM-L6-v2**
-   - Purpose: Semantic search and text similarity
-   - Output: 384-dimensional embeddings
+1. **Snowflake Cortex Search** ⭐ Built-in!
+   - Purpose: Semantic search of clinical notes
+   - Output: Relevance-ranked search results
    - Use Case: Finding similar patient cases, clinical decision support
+   - **No model import needed** - uses Snowflake's native search
 
 2. **dmis-lab/biobert-v1.1**
    - Purpose: Biomedical text understanding and entity extraction
@@ -146,17 +147,19 @@ See detailed instructions in `03_import_models_via_ui.md`
 
 **Quick Steps:**
 1. In Snowsight, go to **AI & ML** → **Models** → **Import model**
-2. For each model, enter the HuggingFace handle and configure:
-   - `sentence-transformers/all-MiniLM-L6-v2`
-   - `dmis-lab/biobert-v1.1`  
-   - `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`
+2. Import these 2 models:
+   - `dmis-lab/biobert-v1.1` (entity extraction)
+   - `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224` (image classification)
 3. Click **Deploy** and wait for deployment to complete
+
+**Note**: Semantic search uses Cortex Search (built-in) - no model import needed!
 
 **What Snowflake does automatically:**
 - Downloads models from HuggingFace
 - Creates container images
 - Deploys as services with REST APIs
 - Makes models queryable via SQL
+- Cortex Search handles embeddings internally
 
 ### Step 4: Run Use Cases (10 minutes)
 

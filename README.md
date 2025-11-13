@@ -6,8 +6,8 @@ This repository contains a complete, self-contained solution for importing three
 ### 🔒 Critical Security Feature
 **ALL DATA STAYS IN SNOWFLAKE** - PHI never leaves your Snowflake account. Models run as Snowpark Container Services within your infrastructure. No external API calls with patient data. This addresses a major HIPAA compliance requirement.
 
-## Models Included
-1. **sentence-transformers/all-MiniLM-L6-v2** - Semantic text search and similarity
+## Models & Services Included
+1. **Snowflake Cortex Search** - Built-in semantic search (no model import needed!)
 2. **microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224** - Biomedical image-text classification
 3. **dmis-lab/biobert-v1.1** - Biomedical named entity recognition and text analysis
 
@@ -59,9 +59,10 @@ Follow the instructions in `03_import_models_via_ui.md` to import each model thr
 3. Configure and deploy
 
 **Models to import:**
-- `sentence-transformers/all-MiniLM-L6-v2` (semantic search)
 - `dmis-lab/biobert-v1.1` (entity extraction)
 - `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224` (image classification)
+
+**Note**: Semantic search uses Cortex Search (built-in) - no model import needed!
 
 **Time**: ~45-60 minutes total (mostly waiting for deployment)
 
