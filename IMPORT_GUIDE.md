@@ -474,6 +474,9 @@ biomedclip_ref = registry.log_model(
 
 ### Test 1: Semantic Search with Cortex Search
 ```sql
+-- Set context to CLINICAL_DATA schema
+USE SCHEMA PEDIATRIC_ML.CLINICAL_DATA;
+
 -- Create Cortex Search service on clinical notes
 CREATE OR REPLACE CORTEX SEARCH SERVICE CLINICAL_NOTES_SEARCH
 ON NOTE_TEXT
@@ -481,12 +484,12 @@ WAREHOUSE = ML_INFERENCE_WH
 TARGET_LAG = '1 day'
 AS (
     SELECT NOTE_ID, NOTE_TEXT, PATIENT_ID, NOTE_TYPE, NOTE_DATE
-    FROM PEDIATRIC_ML.CLINICAL_DATA.CLINICAL_NOTES
+    FROM CLINICAL_NOTES
 );
 
 -- Search for similar notes
 SELECT * FROM TABLE(
-    PEDIATRIC_ML.CLINICAL_DATA.CLINICAL_NOTES_SEARCH!SEARCH(
+    CLINICAL_NOTES_SEARCH!SEARCH(
         'patient with fever and neutropenia',
         {'limit': 10}
     )

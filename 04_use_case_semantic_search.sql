@@ -8,6 +8,7 @@
 
 USE ROLE ML_ENGINEER;
 USE DATABASE PEDIATRIC_ML;
+USE SCHEMA CLINICAL_DATA;  -- Create search service in same schema as data
 USE WAREHOUSE ML_INFERENCE_WH;
 
 -- ----------------------------------------------------------------------------
