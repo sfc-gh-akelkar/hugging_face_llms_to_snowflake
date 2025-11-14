@@ -121,16 +121,10 @@ GRANT USAGE ON SCHEMA PEDIATRIC_ML.ML_RESULTS TO ROLE CLINICAL_USER;
 GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
 
 -- ----------------------------------------------------------------------------
--- 6. Enable Model Registry
+-- 6. Set Up Resource Monitors (Optional but Recommended)
 -- ----------------------------------------------------------------------------
 
--- Model registry is automatically enabled in Business Critical edition
--- Verify with:
-SHOW PARAMETERS LIKE 'ENABLE_MODEL_REGISTRY' IN ACCOUNT;
-
--- ----------------------------------------------------------------------------
--- 7. Set Up Resource Monitors (Optional but Recommended)
--- ----------------------------------------------------------------------------
+-- Note: Model Registry is automatically available in Business Critical edition
 
 CREATE RESOURCE MONITOR IF NOT EXISTS ML_MONTHLY_MONITOR
     WITH 
@@ -147,18 +141,15 @@ ALTER WAREHOUSE ML_IMPORT_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
 ALTER WAREHOUSE ML_INFERENCE_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
 
 -- ----------------------------------------------------------------------------
--- 9. Enable Cortex Search (for semantic search capabilities)
+-- 7. Cortex Search for Semantic Search
 -- ----------------------------------------------------------------------------
 
--- Note: Cortex Search is available in Snowflake and provides built-in semantic search
+-- Note: Cortex Search provides built-in semantic search capabilities
 -- No need to manually create embedding functions or compute similarity scores
--- Cortex Search handles embeddings and indexing automatically
-
--- Verify Cortex Search is available
-SHOW FUNCTIONS LIKE 'SNOWFLAKE.CORTEX%' IN ACCOUNT;
+-- Create Cortex Search services in use case scripts (04_use_case_semantic_search.sql)
 
 -- ----------------------------------------------------------------------------
--- 10. Create Audit Tables
+-- 8. Create Audit Tables
 -- ----------------------------------------------------------------------------
 
 USE SCHEMA ML_RESULTS;
