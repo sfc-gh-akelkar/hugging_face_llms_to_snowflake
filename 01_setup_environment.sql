@@ -89,7 +89,20 @@ CREATE FILE FORMAT IF NOT EXISTS JSON_FORMAT
     STRIP_OUTER_ARRAY = TRUE;
 
 -- ----------------------------------------------------------------------------
--- 5. Create Roles and Grant Permissions
+-- 5. Create Compute Pools for Model Serving
+-- ----------------------------------------------------------------------------
+
+-- Compute pool for ML model inference (CPU-based for PoC)
+CREATE COMPUTE POOL IF NOT EXISTS ML_INFERENCE_POOL
+    MIN_NODES = 1
+    MAX_NODES = 3
+    INSTANCE_FAMILY = CPU_X64_XS  -- X-Small CPU instances for PoC
+    AUTO_RESUME = TRUE
+    AUTO_SUSPEND_SECS = 600  -- 10 minutes idle before suspend
+    COMMENT = 'Compute pool for serving ML models (BioBERT, BiomedCLIP)';
+
+-- ----------------------------------------------------------------------------
+-- 6. Create Roles and Grant Permissions
 -- ----------------------------------------------------------------------------
 
 -- Note: Network policies and rules assumed to be configured at account level
@@ -115,6 +128,10 @@ GRANT USAGE ON WAREHOUSE DATA_LOAD_WH TO ROLE ML_ENGINEER;
 GRANT READ, WRITE ON STAGE PEDIATRIC_ML.MODELS.HF_MODEL_STAGE TO ROLE ML_ENGINEER;
 GRANT READ, WRITE ON STAGE PEDIATRIC_ML.MODELS.MODEL_CODE_STAGE TO ROLE ML_ENGINEER;
 
+-- Grant compute pool access for model deployment and inference
+GRANT USAGE ON COMPUTE POOL ML_INFERENCE_POOL TO ROLE ML_ENGINEER;
+GRANT MONITOR ON COMPUTE POOL ML_INFERENCE_POOL TO ROLE ML_ENGINEER;
+
 -- Create role for clinical users (read-only inference)
 CREATE ROLE IF NOT EXISTS CLINICAL_USER;
 
@@ -123,12 +140,15 @@ GRANT USAGE ON SCHEMA PEDIATRIC_ML.CLINICAL_DATA TO ROLE CLINICAL_USER;
 GRANT USAGE ON SCHEMA PEDIATRIC_ML.ML_RESULTS TO ROLE CLINICAL_USER;
 GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
 
+-- Grant compute pool usage for inference (read-only)
+GRANT USAGE ON COMPUTE POOL ML_INFERENCE_POOL TO ROLE CLINICAL_USER;
+
 -- Grant roles to current user so they can be used immediately
 GRANT ROLE ML_ENGINEER TO USER IDENTIFIER($CURRENT_USER_VAR);
 GRANT ROLE CLINICAL_USER TO USER IDENTIFIER($CURRENT_USER_VAR);
 
 -- ----------------------------------------------------------------------------
--- 6. Create Audit Tables
+-- 7. Create Audit Tables
 -- ----------------------------------------------------------------------------
 
 USE SCHEMA ML_RESULTS;
@@ -164,12 +184,14 @@ CREATE TABLE IF NOT EXISTS MODEL_PERFORMANCE_METRICS (
 SHOW DATABASES LIKE 'PEDIATRIC_ML';
 SHOW SCHEMAS IN DATABASE PEDIATRIC_ML;
 SHOW WAREHOUSES LIKE '%ML%';
+SHOW COMPUTE POOLS LIKE 'ML_INFERENCE_POOL';
 SHOW STAGES IN SCHEMA PEDIATRIC_ML.MODELS;
 
 -- Display summary
 SELECT 'Environment setup complete!' AS STATUS,
        'Database: PEDIATRIC_ML' AS DATABASE_INFO,
        'Schemas: MODELS, CLINICAL_DATA, ML_RESULTS' AS SCHEMA_INFO,
+       'Compute Pool: ML_INFERENCE_POOL' AS COMPUTE_POOL_INFO,
        'Ready to import HuggingFace models' AS NEXT_STEP;
 
 /*
