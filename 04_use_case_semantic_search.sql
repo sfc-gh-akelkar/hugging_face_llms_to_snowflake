@@ -24,18 +24,14 @@ WAREHOUSE = ML_INFERENCE_WH
 TARGET_LAG = '1 hour'
 AS (
     SELECT 
-        CN.NOTE_ID,
-        CN.PATIENT_ID,
-        CN.ENCOUNTER_ID,
-        CN.NOTE_DATE,
-        CN.NOTE_TYPE,
-        E.DEPARTMENT,
-        E.PRIMARY_DIAGNOSIS,
-        CN.NOTE_TEXT,
-        CN.AUTHOR
-    FROM CLINICAL_DATA.CLINICAL_NOTES CN
-    JOIN CLINICAL_DATA.ENCOUNTERS E ON CN.ENCOUNTER_ID = E.ENCOUNTER_ID
-    WHERE E.DEPARTMENT IN ('Pediatric Oncology', 'General Pediatrics')
+        NOTE_ID,
+        PATIENT_ID,
+        ENCOUNTER_ID,
+        NOTE_DATE,
+        NOTE_TYPE,
+        NOTE_TEXT,
+        AUTHOR
+    FROM CLINICAL_NOTES
 );
 
 -- Check service status
@@ -56,7 +52,7 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "Patient presents with fever, fatigue, and low white blood cell count",
-            "columns": ["NOTE_TEXT", "NOTE_TYPE", "DEPARTMENT"],
+            "columns": ["NOTE_TEXT", "NOTE_TYPE", "PATIENT_ID", "NOTE_DATE"],
             "limit": 10
         }'
     )
@@ -68,20 +64,19 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "acute lymphoblastic leukemia chemotherapy treatment vincristine doxorubicin",
-            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS"],
-            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
             "limit": 20
         }'
     )
 )['results'] as results;
 
--- Example 3: Search for specific symptoms with department filter
+-- Example 3: Search for specific symptoms with note type filter
 SELECT PARSE_JSON(
     SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "nausea vomiting chemotherapy side effects",
-            "columns": ["NOTE_TEXT", "NOTE_DATE", "AUTHOR"],
+            "columns": ["NOTE_TEXT", "NOTE_DATE", "AUTHOR", "PATIENT_ID"],
             "filter": {"@eq": {"NOTE_TYPE": "Progress Note"}},
             "limit": 15
         }'
@@ -92,7 +87,7 @@ SELECT PARSE_JSON(
 -- Step 3: Enhanced Search with Filters
 -- ----------------------------------------------------------------------------
 
--- Search within specific department using built-in filter
+-- Search with author filter using built-in filter
 -- Cortex Search supports filters directly in the query
 
 SELECT PARSE_JSON(
@@ -100,8 +95,7 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "seizure disorder medication management",
-            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
-            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE", "AUTHOR"],
             "limit": 10
         }'
     )
@@ -111,19 +105,14 @@ SELECT PARSE_JSON(
 -- Step 4: Advanced Filtering Examples
 -- ----------------------------------------------------------------------------
 
--- Multiple filter conditions (AND logic)
+-- Multiple filter conditions (AND logic) using NOTE_TYPE
 SELECT PARSE_JSON(
     SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "chemotherapy side effects nausea",
             "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_DATE", "AUTHOR"],
-            "filter": {
-                "@and": [
-                    {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
-                    {"@eq": {"NOTE_TYPE": "Progress Note"}}
-                ]
-            },
+            "filter": {"@eq": {"NOTE_TYPE": "Progress Note"}},
             "limit": 10
         }'
     )
@@ -139,8 +128,7 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "acute lymphoblastic leukemia ALL diagnosis treatment",
-            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
-            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
             "limit": 20
         }'
     )
@@ -168,7 +156,7 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "vincristine therapy treatment administration side effects",
-            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
             "limit": 25
         }'
     )
@@ -181,7 +169,6 @@ SELECT PARSE_JSON(
         '{
             "query": "chemotherapy side effects nausea vomiting neutropenia",
             "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
-            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
             "limit": 30
         }'
     )
@@ -197,7 +184,7 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "fever neutropenia low WBC white blood cell count",
-            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
             "limit": 20
         }'
     )
@@ -209,8 +196,7 @@ SELECT PARSE_JSON(
         'CLINICAL_NOTES_SEARCH',
         '{
             "query": "acute lymphoblastic leukemia ALL induction chemotherapy protocol",
-            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS"],
-            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
             "limit": 15
         }'
     )
