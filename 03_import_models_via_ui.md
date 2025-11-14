@@ -110,11 +110,11 @@ AS (
    - **Compute pool**: Select `ML_INFERENCE_POOL`
    - **Number of instances**: `1`
    
-   **Advanced Settings (for CPU):**
-   - **Number of workers**: `2`
-   - **Max batch rows**: `50`
-   - **CPU**: `2000` (2 cores)
-   - **Memory**: `8Gi`
+   **Advanced Settings:**
+   - ✅ **Accept Snowflake's default settings**
+   - Snowflake optimizes these based on the model and compute pool
+   - Only adjust if you have specific performance issues after testing
+   - Settings can be modified later through ALTER SERVICE
 
 5. **Deploy**
    - Click **Deploy**
@@ -160,15 +160,14 @@ AS (
    
    - **Service name**: `BIOMEDCLIP_SERVICE`
    - **Create REST API endpoint**: ✅ Check this
-   - **Compute pool**: Select `ML_INFERENCE_POOL` (or GPU pool if available)
+   - **Compute pool**: Select `ML_INFERENCE_POOL`
    - **Number of instances**: `1`
    
    **Advanced Settings:**
-   - **Number of workers**: `1` (vision models are memory intensive)
-   - **Max batch rows**: `10`
-   - **CPU**: `4000` (4 cores)
-   - **Memory**: `16Gi` (vision models need more memory)
-   - **GPU**: `1` (if using GPU compute pool)
+   - ✅ **Accept Snowflake's default settings**
+   - Snowflake optimizes these based on the model and compute pool
+   - Only adjust if you have specific performance issues after testing
+   - Settings can be modified later through ALTER SERVICE
 
 5. **Deploy**
    - Click **Deploy**
@@ -212,9 +211,10 @@ AS (
 - Container image is being built in the background
 
 **Out of Memory errors:**
-- Increase memory in Advanced Settings
-- Reduce number of workers
-- Reduce max batch rows
+- First, verify you're using Snowflake's default settings (they are pre-optimized)
+- If still occurring, increase memory allocation in Advanced Settings
+- Or reduce number of workers/max batch rows
+- Consider using larger compute pool instance family
 
 ---
 
