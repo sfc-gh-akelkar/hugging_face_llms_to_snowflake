@@ -1,10 +1,19 @@
 # Importing HuggingFace Models into Snowflake for Pediatric Hospital Use Cases
 
 ## Overview
-This repository contains a complete, self-contained solution for importing three HuggingFace models into Snowflake's Model Registry and deploying them for pediatric hospital clinical use cases.
+This repository contains a complete, end-to-end solution for bringing HuggingFace AI models into Snowflake and making them accessible to clinical staff through an intuitive **Streamlit application**.
+
+### ⭐ **RECOMMENDED**: Streamlit App for End Users
+The fastest way to get value from this solution is deploying the **Streamlit Clinical Intelligence App** (`08_streamlit_clinical_intelligence_app.py`), which provides:
+- 🤖 **Natural language search** - No SQL required
+- 👥 **Similar patient finder** - For treatment planning
+- 📊 **Interactive dashboards** - Real-time analytics
+- 💊 **Entity extraction** - Structured data from notes
+
+**All in ONE unified interface for clinical staff!**
 
 ### 🔒 Critical Security Feature
-**ALL DATA STAYS IN SNOWFLAKE** - PHI never leaves your Snowflake account. Models run as Snowpark Container Services within your infrastructure. No external API calls with patient data. This addresses a major HIPAA compliance requirement.
+**ALL DATA STAYS IN SNOWFLAKE** - PHI never leaves your Snowflake account. Models run as Snowpark Container Services within your infrastructure. No external API calls with patient data. HIPAA compliant.
 
 ## Models & Services Included
 1. **Snowflake Cortex Search** - Built-in semantic search (no model import needed!)
@@ -19,17 +28,24 @@ This repository contains a complete, self-contained solution for importing three
 
 ## Repository Structure
 ```
-├── README.md                          # This file
-├── QUICKSTART.md                      # Quick start guide - start here!
-├── 01_setup_environment.sql           # Snowflake environment setup
-├── 02_create_mock_data.sql            # Generate mock Clarity/Caboodle data
-├── 03_import_models_via_ui.md         # Import models via Snowsight UI
-├── 04_use_case_semantic_search.sql    # Use case: Clinical notes search
-├── 05_use_case_oncology_matching.sql  # Use case: Patient similarity
-├── 06_use_case_entity_extraction.sql  # Use case: NER from notes
-├── IMPORT_GUIDE.md                    # Detailed technical guide
-├── SECURITY_CONSIDERATIONS.md         # PHI handling and compliance
-└── requirements.txt                   # Python dependencies (minimal)
+├── README.md                               # This file
+├── QUICKSTART.md                           # Quick start guide
+├── END_USER_CONSUMPTION_GUIDE.md           # How clinicians use the solution
+│
+├── 01_setup_environment.sql                # Snowflake environment setup
+├── 02_create_mock_data.sql                 # Generate mock Clarity/Caboodle data
+├── 03_import_models_via_ui.md              # Import models via Snowsight UI
+├── 04_use_case_semantic_search.sql         # Use case: Clinical notes search
+├── 05_use_case_oncology_matching.sql       # Use case: Patient similarity
+├── 06_use_case_entity_extraction.sql       # Use case: NER from notes
+│
+├── 08_streamlit_clinical_intelligence_app.py   # ⭐ RECOMMENDED: Streamlit UI
+├── 09_deploy_streamlit_app.sql                 # Deploy Streamlit app
+├── 07_snowflake_intelligence_agent.sql         # Alternative: Cortex Analyst
+│
+├── IMPORT_GUIDE.md                         # Detailed technical guide
+├── SECURITY_CONSIDERATIONS.md              # PHI handling and compliance
+└── requirements.txt                        # Python dependencies (minimal)
 ```
 
 ## Quick Start
