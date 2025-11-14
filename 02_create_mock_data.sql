@@ -3,6 +3,12 @@
 -- ============================================================================
 -- Purpose: Create realistic mock data mimicking Clarity/Caboodle clinical data
 -- Note: This is synthetic data for PoC purposes only
+-- 
+-- EXECUTION INSTRUCTIONS:
+-- 1. Run this ENTIRE file at once (select all and execute)
+-- 2. Do NOT run it section-by-section as foreign key dependencies will fail
+-- 3. Expected runtime: 2-3 minutes on DATA_LOAD_WH (X-Small)
+-- 4. This script will CREATE OR REPLACE all tables, so it's safe to re-run
 -- ============================================================================
 
 USE ROLE ML_ENGINEER;
