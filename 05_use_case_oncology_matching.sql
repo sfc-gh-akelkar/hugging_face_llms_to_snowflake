@@ -39,8 +39,6 @@ SELECT
     ln.NOTE_ID AS latest_note_id,
     ln.NOTE_TEXT AS latest_note,
     ln.NOTE_DATE AS latest_note_date,
-    EMBED_TEXT(ln.NOTE_TEXT) AS clinical_embedding,
-    EXTRACT_MEDICAL_TERMS(ln.NOTE_TEXT) AS medical_terms,
     CURRENT_TIMESTAMP() AS profile_created_at
 FROM latest_notes ln
 JOIN CLINICAL_DATA.PATIENTS p ON ln.PATIENT_ID = p.PATIENT_ID
@@ -53,65 +51,77 @@ SELECT
     AGE_YEARS,
     GENDER,
     PRIMARY_DIAGNOSIS,
-    ARRAY_SIZE(medical_terms) AS num_medical_terms,
-    latest_note_date
+    latest_note_date,
+    SUBSTR(latest_note, 1, 200) AS note_preview
 FROM ML_RESULTS.ONCOLOGY_PATIENT_PROFILES
 ORDER BY latest_note_date DESC
 LIMIT 10;
 
 -- ----------------------------------------------------------------------------
--- Step 2: Find Similar Oncology Patients
+-- Step 2: Find Similar Oncology Patients Using Cortex Search
 -- ----------------------------------------------------------------------------
 
--- Function to find patients with similar clinical presentations
-CREATE OR REPLACE FUNCTION FIND_SIMILAR_ONCOLOGY_PATIENTS(
+-- Create a procedure to find similar patients using Cortex Search
+CREATE OR REPLACE PROCEDURE FIND_SIMILAR_ONCOLOGY_PATIENTS(
     target_patient_id NUMBER,
-    min_similarity FLOAT,
     max_results NUMBER
 )
 RETURNS TABLE (
     similar_patient_id NUMBER,
-    similarity_score FLOAT,
+    similar_mrn VARCHAR,
     age_years NUMBER,
     gender VARCHAR,
     diagnosis VARCHAR,
-    shared_medical_terms NUMBER,
-    latest_note_date TIMESTAMP_NTZ
+    latest_note_date TIMESTAMP_NTZ,
+    note_preview VARCHAR
 )
+LANGUAGE SQL
 AS
 $$
-    WITH target_patient AS (
-        SELECT 
-            PATIENT_ID,
-            PRIMARY_DIAGNOSIS,
-            clinical_embedding,
-            medical_terms
-        FROM ML_RESULTS.ONCOLOGY_PATIENT_PROFILES
-        WHERE PATIENT_ID = target_patient_id
-    )
-    SELECT 
-        opp.PATIENT_ID AS similar_patient_id,
-        COSINE_SIMILARITY(tp.clinical_embedding, opp.clinical_embedding) AS similarity_score,
-        opp.AGE_YEARS,
-        opp.GENDER,
-        opp.PRIMARY_DIAGNOSIS AS diagnosis,
-        ARRAY_SIZE(ARRAY_INTERSECTION(tp.medical_terms, opp.medical_terms)) AS shared_medical_terms,
-        opp.latest_note_date
-    FROM target_patient tp
-    CROSS JOIN ML_RESULTS.ONCOLOGY_PATIENT_PROFILES opp
-    WHERE opp.PATIENT_ID != tp.PATIENT_ID
-        AND COSINE_SIMILARITY(tp.clinical_embedding, opp.clinical_embedding) >= min_similarity
-    ORDER BY similarity_score DESC
-    LIMIT max_results
+BEGIN
+    LET target_note_text VARCHAR;
+    
+    -- Get the latest note for the target patient
+    SELECT latest_note INTO :target_note_text
+    FROM ML_RESULTS.ONCOLOGY_PATIENT_PROFILES
+    WHERE PATIENT_ID = :target_patient_id;
+    
+    -- Use Cortex Search to find similar notes
+    LET search_query VARCHAR := 
+        'SELECT 
+            opp.PATIENT_ID AS similar_patient_id,
+            opp.MRN AS similar_mrn,
+            opp.AGE_YEARS AS age_years,
+            opp.GENDER AS gender,
+            opp.PRIMARY_DIAGNOSIS AS diagnosis,
+            opp.latest_note_date,
+            SUBSTR(opp.latest_note, 1, 300) AS note_preview
+         FROM (
+            SELECT PARSE_JSON(
+                SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+                    ''CLINICAL_NOTES_SEARCH'',
+                    ''{
+                        "query": "' || REPLACE(:target_note_text, '"', '\\"') || '",
+                        "columns": ["NOTE_ID", "PATIENT_ID", "NOTE_TEXT"],
+                        "limit": ' || :max_results || '
+                    }''
+                )
+            )[''results''] as search_results
+         ) sr
+         JOIN ML_RESULTS.ONCOLOGY_PATIENT_PROFILES opp 
+            ON sr.search_results[''PATIENT_ID'']::NUMBER = opp.PATIENT_ID
+         WHERE opp.PATIENT_ID != ' || :target_patient_id || '
+         LIMIT ' || :max_results;
+    
+    LET res RESULTSET := (EXECUTE IMMEDIATE :search_query);
+    RETURN TABLE(res);
+END;
 $$;
 
 -- Test: Find similar patients
-SELECT * FROM TABLE(
-    FIND_SIMILAR_ONCOLOGY_PATIENTS(
-        1,      -- Target patient ID
-        0.6,    -- Minimum 60% similarity
-        10      -- Top 10 matches
-    )
+CALL FIND_SIMILAR_ONCOLOGY_PATIENTS(
+    1,      -- Target patient ID
+    10      -- Top 10 matches
 );
 
 -- ----------------------------------------------------------------------------
