@@ -94,6 +94,9 @@ CREATE FILE FORMAT IF NOT EXISTS JSON_FORMAT
 
 -- Note: Network policies and rules assumed to be configured at account level
 
+-- Get current user to grant roles
+SET CURRENT_USER_VAR = (SELECT CURRENT_USER());
+
 -- Create role for ML engineers
 CREATE ROLE IF NOT EXISTS ML_ENGINEER;
 
@@ -119,6 +122,10 @@ GRANT USAGE ON DATABASE PEDIATRIC_ML TO ROLE CLINICAL_USER;
 GRANT USAGE ON SCHEMA PEDIATRIC_ML.CLINICAL_DATA TO ROLE CLINICAL_USER;
 GRANT USAGE ON SCHEMA PEDIATRIC_ML.ML_RESULTS TO ROLE CLINICAL_USER;
 GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
+
+-- Grant roles to current user so they can be used immediately
+GRANT ROLE ML_ENGINEER TO USER IDENTIFIER($CURRENT_USER_VAR);
+GRANT ROLE CLINICAL_USER TO USER IDENTIFIER($CURRENT_USER_VAR);
 
 -- ----------------------------------------------------------------------------
 -- 6. Create Audit Tables
