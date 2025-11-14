@@ -26,8 +26,8 @@ See `SECURITY_CONSIDERATIONS.md` for complete details.
    - **No model import needed** - uses Snowflake's native search
 
 2. **dmis-lab/biobert-v1.1**
-   - Purpose: Biomedical text understanding and entity extraction
-   - Output: 768-dimensional embeddings + extracted entities
+   - Purpose: Biomedical named entity recognition (NER)
+   - Task: Token Classification
    - Use Case: Extracting medications, symptoms, diagnoses from notes
 
 3. **microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224**

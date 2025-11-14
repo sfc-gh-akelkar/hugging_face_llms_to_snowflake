@@ -76,8 +76,8 @@ AS (
 
 ### Purpose
 - **Use Case**: Biomedical entity extraction, clinical NLP
-- **Output**: 768-dimensional embeddings
-- **Task Type**: Feature Extraction
+- **Output**: Named entities (medications, symptoms, diagnoses)
+- **Task Type**: Token Classification (for NER)
 
 ### Import Steps
 
@@ -89,7 +89,7 @@ AS (
    
    **Model Details:**
    - **Model handle**: `dmis-lab/biobert-v1.1`
-   - **Task**: Select **Feature Extraction**
+   - **Task**: Select **Token Classification**
    - **Trust remote code**: Leave unchecked
    - **Hugging Face token secret**: Leave empty (public model)
 
