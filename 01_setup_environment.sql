@@ -121,15 +121,7 @@ GRANT USAGE ON SCHEMA PEDIATRIC_ML.ML_RESULTS TO ROLE CLINICAL_USER;
 GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
 
 -- ----------------------------------------------------------------------------
--- 6. Cortex Search for Semantic Search
--- ----------------------------------------------------------------------------
-
--- Note: Cortex Search provides built-in semantic search capabilities
--- No need to manually create embedding functions or compute similarity scores
--- Create Cortex Search services in use case scripts (04_use_case_semantic_search.sql)
-
--- ----------------------------------------------------------------------------
--- 7. Create Audit Tables
+-- 6. Create Audit Tables
 -- ----------------------------------------------------------------------------
 
 USE SCHEMA ML_RESULTS;
