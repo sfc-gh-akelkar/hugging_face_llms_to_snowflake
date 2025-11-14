@@ -488,12 +488,16 @@ AS (
 );
 
 -- Search for similar notes
-SELECT * FROM TABLE(
-    CLINICAL_NOTES_SEARCH!SEARCH(
-        'patient with fever and neutropenia',
-        {'limit': 10}
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "patient with fever and neutropenia",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
+            "limit": 10
+        }'
     )
-);
+)['results'] as results;
 ```
 
 ### Test 2: Entity Extraction with BioBERT

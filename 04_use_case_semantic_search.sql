@@ -51,273 +51,182 @@ DESC CORTEX SEARCH SERVICE CLINICAL_NOTES_SEARCH;
 -- Example 1: Search for notes about fever and fatigue
 -- Use case: "Find all cases with symptoms similar to fever and fatigue"
 
-SELECT * FROM TABLE(
-    CLINICAL_NOTES_SEARCH!SEARCH(
-        'Patient presents with fever, fatigue, and low white blood cell count',
-        10  -- Return top 10 results
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "Patient presents with fever, fatigue, and low white blood cell count",
+            "columns": ["NOTE_TEXT", "NOTE_TYPE", "DEPARTMENT"],
+            "limit": 10
+        }'
     )
-);
+)['results'] as results;
 
 -- Example 2: Search for oncology treatment notes
-SELECT * FROM TABLE(
-    CLINICAL_NOTES_SEARCH!SEARCH(
-        'acute lymphoblastic leukemia chemotherapy treatment vincristine doxorubicin',
-        20
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "acute lymphoblastic leukemia chemotherapy treatment vincristine doxorubicin",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS"],
+            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "limit": 20
+        }'
     )
-);
+)['results'] as results;
 
--- Example 3: Search for specific symptoms
-SELECT * FROM TABLE(
-    CLINICAL_NOTES_SEARCH!SEARCH(
-        'nausea vomiting chemotherapy side effects',
-        15
+-- Example 3: Search for specific symptoms with department filter
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "nausea vomiting chemotherapy side effects",
+            "columns": ["NOTE_TEXT", "NOTE_DATE", "AUTHOR"],
+            "filter": {"@eq": {"NOTE_TYPE": "Progress Note"}},
+            "limit": 15
+        }'
     )
-);
+)['results'] as results;
 
 -- ----------------------------------------------------------------------------
 -- Step 3: Enhanced Search with Filters
 -- ----------------------------------------------------------------------------
 
--- Search within specific department
--- Add post-filtering to Cortex Search results
+-- Search within specific department using built-in filter
+-- Cortex Search supports filters directly in the query
 
-WITH search_results AS (
-    SELECT * FROM TABLE(
-        CLINICAL_NOTES_SEARCH!SEARCH(
-            'seizure disorder medication management',
-            50
-        )
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "seizure disorder medication management",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
+            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "limit": 10
+        }'
     )
-)
-SELECT 
-    sr.NOTE_ID,
-    sr.PATIENT_ID,
-    sr.DEPARTMENT,
-    sr.PRIMARY_DIAGNOSIS,
-    sr.NOTE_DATE,
-    SUBSTR(sr.NOTE_TEXT, 1, 300) AS note_excerpt,
-    sr.SEARCH_SCORE  -- Relevance score from Cortex Search
-FROM search_results sr
-WHERE sr.DEPARTMENT = 'Pediatric Oncology'
-ORDER BY sr.SEARCH_SCORE DESC
-LIMIT 10;
+)['results'] as results;
 
 -- ----------------------------------------------------------------------------
--- Step 4: Create Reusable Search Function
+-- Step 4: Advanced Filtering Examples
 -- ----------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION SEARCH_CLINICAL_NOTES(
-    query_text VARCHAR,
-    department_filter VARCHAR,
-    max_results NUMBER
-)
-RETURNS TABLE (
-    NOTE_ID NUMBER,
-    PATIENT_ID NUMBER,
-    DEPARTMENT VARCHAR,
-    DIAGNOSIS VARCHAR,
-    NOTE_DATE TIMESTAMP_NTZ,
-    RELEVANCE_SCORE FLOAT,
-    NOTE_EXCERPT VARCHAR
-)
-AS
-$$
-    WITH search_results AS (
-        SELECT * FROM TABLE(
-            CLINICAL_NOTES_SEARCH!SEARCH(query_text, max_results * 2)
-        )
+-- Multiple filter conditions (AND logic)
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "chemotherapy side effects nausea",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_DATE", "AUTHOR"],
+            "filter": {
+                "@and": [
+                    {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+                    {"@eq": {"NOTE_TYPE": "Progress Note"}}
+                ]
+            },
+            "limit": 10
+        }'
     )
-    SELECT 
-        NOTE_ID,
-        PATIENT_ID,
-        DEPARTMENT,
-        PRIMARY_DIAGNOSIS AS DIAGNOSIS,
-        NOTE_DATE,
-        SEARCH_SCORE AS RELEVANCE_SCORE,
-        SUBSTR(NOTE_TEXT, 1, 300) AS NOTE_EXCERPT
-    FROM search_results
-    WHERE (department_filter = 'ALL' OR DEPARTMENT = department_filter)
-    ORDER BY SEARCH_SCORE DESC
-    LIMIT max_results
-$$;
+)['results'] as results;
 
--- Test the function
-SELECT * FROM TABLE(
-    SEARCH_CLINICAL_NOTES(
-        'chemotherapy side effects nausea',
-        'Pediatric Oncology',
-        10
+-- ----------------------------------------------------------------------------
+-- Step 5: Searching for Specific Clinical Scenarios
+-- ----------------------------------------------------------------------------
+
+-- Search for ALL (Acute Lymphoblastic Leukemia) cases
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "acute lymphoblastic leukemia ALL diagnosis treatment",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
+            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "limit": 20
+        }'
     )
-);
+)['results'] as all_cases;
 
--- ----------------------------------------------------------------------------
--- Step 5: Patient Case Matching
--- ----------------------------------------------------------------------------
-
--- Find similar cases for a specific patient based on their most recent note
-
-CREATE OR REPLACE VIEW ML_RESULTS.V_PATIENT_CASE_MATCHES AS
-WITH latest_patient_notes AS (
-    SELECT 
-        cn.PATIENT_ID,
-        cn.NOTE_TEXT,
-        ROW_NUMBER() OVER (PARTITION BY cn.PATIENT_ID ORDER BY cn.NOTE_DATE DESC) AS rn
-    FROM CLINICAL_DATA.CLINICAL_NOTES cn
-    JOIN CLINICAL_DATA.ENCOUNTERS e ON cn.ENCOUNTER_ID = e.ENCOUNTER_ID
-    WHERE e.DEPARTMENT IN ('Pediatric Oncology', 'General Pediatrics')
-)
-SELECT 
-    lpn.PATIENT_ID AS current_patient,
-    sr.PATIENT_ID AS similar_patient,
-    sr.DEPARTMENT,
-    sr.PRIMARY_DIAGNOSIS,
-    sr.NOTE_DATE AS similar_case_date,
-    sr.SEARCH_SCORE AS similarity_score,
-    SUBSTR(sr.NOTE_TEXT, 1, 200) AS similar_note_preview
-FROM latest_patient_notes lpn
-CROSS JOIN LATERAL (
-    SELECT * FROM TABLE(
-        CLINICAL_NOTES_SEARCH!SEARCH(lpn.NOTE_TEXT, 10)
+-- Search for treatment response patterns
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "treatment response remission minimal residual disease",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_DATE"],
+            "limit": 15
+        }'
     )
-    WHERE PATIENT_ID != lpn.PATIENT_ID
-) sr
-WHERE lpn.rn = 1
-ORDER BY lpn.PATIENT_ID, sr.SEARCH_SCORE DESC;
-
--- View matches for specific patients
-SELECT * FROM ML_RESULTS.V_PATIENT_CASE_MATCHES
-WHERE current_patient IN (1, 2, 3, 4, 5)
-LIMIT 50;
+)['results'] as treatment_response;
 
 -- ----------------------------------------------------------------------------
--- Step 6: Department-Specific Search Dashboard
+-- Step 6: Medication-Specific Searches
 -- ----------------------------------------------------------------------------
 
--- Oncology case search
-CREATE OR REPLACE VIEW ML_RESULTS.V_ONCOLOGY_CASE_SEARCH AS
-SELECT 
-    'Acute Lymphoblastic Leukemia Cases' AS category,
-    (SELECT COUNT(*) FROM TABLE(
-        CLINICAL_NOTES_SEARCH!SEARCH('acute lymphoblastic leukemia ALL', 100)
-    )) AS case_count
-UNION ALL
-SELECT 
-    'Chemotherapy Side Effects',
-    (SELECT COUNT(*) FROM TABLE(
-        CLINICAL_NOTES_SEARCH!SEARCH('chemotherapy side effects nausea vomiting', 100)
-    ))
-UNION ALL
-SELECT 
-    'Treatment Response',
-    (SELECT COUNT(*) FROM TABLE(
-        CLINICAL_NOTES_SEARCH!SEARCH('treatment response remission', 100)
-    ))
-UNION ALL
-SELECT 
-    'Vincristine Therapy',
-    (SELECT COUNT(*) FROM TABLE(
-        CLINICAL_NOTES_SEARCH!SEARCH('vincristine therapy treatment', 100)
-    ));
-
--- View dashboard
-SELECT * FROM ML_RESULTS.V_ONCOLOGY_CASE_SEARCH;
-
--- ----------------------------------------------------------------------------
--- Step 7: Stored Procedure for Interactive Search
--- ----------------------------------------------------------------------------
-
-CREATE OR REPLACE PROCEDURE INTERACTIVE_CLINICAL_SEARCH(
-    search_query VARCHAR,
-    department_filter VARCHAR,
-    max_results NUMBER
-)
-RETURNS TABLE (
-    note_id NUMBER,
-    patient_mrn VARCHAR,
-    patient_age NUMBER,
-    diagnosis VARCHAR,
-    department VARCHAR,
-    note_date TIMESTAMP_NTZ,
-    relevance_score FLOAT,
-    note_excerpt VARCHAR
-)
-LANGUAGE SQL
-AS
-$$
-BEGIN
-    LET res RESULTSET := (
-        WITH search_results AS (
-            SELECT * FROM TABLE(
-                CLINICAL_NOTES_SEARCH!SEARCH(:search_query, :max_results * 2)
-            )
-        )
-        SELECT 
-            sr.NOTE_ID,
-            p.MRN AS patient_mrn,
-            p.AGE_YEARS AS patient_age,
-            sr.PRIMARY_DIAGNOSIS AS diagnosis,
-            sr.DEPARTMENT,
-            sr.NOTE_DATE,
-            sr.SEARCH_SCORE AS relevance_score,
-            SUBSTR(sr.NOTE_TEXT, 1, 300) AS note_excerpt
-        FROM search_results sr
-        JOIN CLINICAL_DATA.PATIENTS p ON sr.PATIENT_ID = p.PATIENT_ID
-        WHERE (UPPER(:department_filter) = 'ALL' OR sr.DEPARTMENT = :department_filter)
-        ORDER BY sr.SEARCH_SCORE DESC
-        LIMIT :max_results
-    );
-    
-    RETURN TABLE(res);
-END;
-$$;
-
--- Test the procedure
-CALL INTERACTIVE_CLINICAL_SEARCH(
-    'pediatric leukemia treatment vincristine doxorubicin',
-    'Pediatric Oncology',
-    15
-);
-
--- ----------------------------------------------------------------------------
--- Step 8: Real-time Search for Clinical Decision Support
--- ----------------------------------------------------------------------------
-
--- Create streamlined search for clinician interface
-CREATE OR REPLACE FUNCTION QUICK_CASE_SEARCH(
-    symptoms_or_diagnosis VARCHAR
-)
-RETURNS TABLE (
-    patient_mrn VARCHAR,
-    age_years NUMBER,
-    diagnosis VARCHAR,
-    note_date TIMESTAMP_NTZ,
-    relevance FLOAT,
-    summary VARCHAR
-)
-AS
-$$
-    WITH search_results AS (
-        SELECT * FROM TABLE(
-            CLINICAL_NOTES_SEARCH!SEARCH(symptoms_or_diagnosis, 20)
-        )
+-- Search for vincristine therapy cases
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "vincristine therapy treatment administration side effects",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
+            "limit": 25
+        }'
     )
-    SELECT 
-        p.MRN AS patient_mrn,
-        p.AGE_YEARS AS age_years,
-        sr.PRIMARY_DIAGNOSIS AS diagnosis,
-        sr.NOTE_DATE,
-        sr.SEARCH_SCORE AS relevance,
-        SUBSTR(sr.NOTE_TEXT, 1, 250) AS summary
-    FROM search_results sr
-    JOIN CLINICAL_DATA.PATIENTS p ON sr.PATIENT_ID = p.PATIENT_ID
-    WHERE sr.SEARCH_SCORE > 0.5  -- Only highly relevant results
-    ORDER BY sr.SEARCH_SCORE DESC
-$$;
+)['results'] as vincristine_cases;
 
--- Example searches
-SELECT * FROM TABLE(QUICK_CASE_SEARCH('fever neutropenia low WBC'));
-SELECT * FROM TABLE(QUICK_CASE_SEARCH('ALL induction chemotherapy'));
-SELECT * FROM TABLE(QUICK_CASE_SEARCH('nausea vomiting ondansetron'));
+-- Search for chemotherapy side effects
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "chemotherapy side effects nausea vomiting neutropenia",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_TYPE", "NOTE_DATE"],
+            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "limit": 30
+        }'
+    )
+)['results'] as chemo_side_effects;
+
+-- ----------------------------------------------------------------------------
+-- Step 7: Clinical Decision Support Searches
+-- ----------------------------------------------------------------------------
+
+-- Search for fever and neutropenia cases
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "fever neutropenia low WBC white blood cell count",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS", "NOTE_DATE"],
+            "limit": 20
+        }'
+    )
+)['results'] as fever_neutropenia_cases;
+
+-- Search for ALL induction chemotherapy
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "acute lymphoblastic leukemia ALL induction chemotherapy protocol",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "PRIMARY_DIAGNOSIS"],
+            "filter": {"@eq": {"DEPARTMENT": "Pediatric Oncology"}},
+            "limit": 15
+        }'
+    )
+)['results'] as all_induction_cases;
+
+-- Search for antiemetic medication usage
+SELECT PARSE_JSON(
+    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+        'CLINICAL_NOTES_SEARCH',
+        '{
+            "query": "nausea vomiting ondansetron antiemetic medication",
+            "columns": ["NOTE_TEXT", "PATIENT_ID", "NOTE_DATE"],
+            "limit": 20
+        }'
+    )
+)['results'] as antiemetic_cases;
 
 -- ----------------------------------------------------------------------------
 -- Step 9: Performance Monitoring
