@@ -121,27 +121,7 @@ GRANT USAGE ON SCHEMA PEDIATRIC_ML.ML_RESULTS TO ROLE CLINICAL_USER;
 GRANT USAGE ON WAREHOUSE ML_INFERENCE_WH TO ROLE CLINICAL_USER;
 
 -- ----------------------------------------------------------------------------
--- 6. Set Up Resource Monitors (Optional but Recommended)
--- ----------------------------------------------------------------------------
-
--- Note: Model Registry is automatically available in Business Critical edition
-
-CREATE RESOURCE MONITOR IF NOT EXISTS ML_MONTHLY_MONITOR
-    WITH 
-    CREDIT_QUOTA = 1000  -- Adjust based on budget
-    FREQUENCY = MONTHLY
-    START_TIMESTAMP = IMMEDIATELY
-    TRIGGERS 
-        ON 75 PERCENT DO NOTIFY
-        ON 90 PERCENT DO SUSPEND
-        ON 100 PERCENT DO SUSPEND_IMMEDIATE;
-
--- Apply to ML warehouses
-ALTER WAREHOUSE ML_IMPORT_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
-ALTER WAREHOUSE ML_INFERENCE_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
-
--- ----------------------------------------------------------------------------
--- 7. Cortex Search for Semantic Search
+-- 6. Cortex Search for Semantic Search
 -- ----------------------------------------------------------------------------
 
 -- Note: Cortex Search provides built-in semantic search capabilities
@@ -149,7 +129,7 @@ ALTER WAREHOUSE ML_INFERENCE_WH SET RESOURCE_MONITOR = ML_MONTHLY_MONITOR;
 -- Create Cortex Search services in use case scripts (04_use_case_semantic_search.sql)
 
 -- ----------------------------------------------------------------------------
--- 8. Create Audit Tables
+-- 7. Create Audit Tables
 -- ----------------------------------------------------------------------------
 
 USE SCHEMA ML_RESULTS;
