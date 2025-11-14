@@ -97,15 +97,15 @@ Copy these exact handles for import:
 
 ### Model 2: dmis-lab/biobert-v1.1
 **Handle**: `dmis-lab/biobert-v1.1`  
-**Task**: Feature Extraction  
+**Task**: Token Classification  
 **Size**: ~420 MB  
-**Use Case**: Biomedical entity extraction
+**Use Case**: Biomedical named entity recognition (NER)
 
 ### Model 3: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
 **Handle**: `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`  
-**Task**: Zero-Shot Image Classification  
+**Task**: Zero-Shot Classification  
 **Size**: ~500 MB  
-**Use Case**: Medical image classification
+**Use Case**: Medical image classification (vision-language model)
 
 **→ For detailed step-by-step import instructions, see `03_import_models_via_ui.md`**
 

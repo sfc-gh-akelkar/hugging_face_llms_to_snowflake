@@ -127,7 +127,7 @@ AS (
 ### Purpose
 - **Use Case**: Medical image classification (X-rays, MRI, pathology)
 - **Output**: Image classifications with confidence scores
-- **Task Type**: Zero-Shot Image Classification
+- **Task Type**: Zero-Shot Classification (CLIP-based vision-language model)
 
 ### Import Steps
 
@@ -139,7 +139,7 @@ AS (
    
    **Model Details:**
    - **Model handle**: `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`
-   - **Task**: Select **Zero-Shot Image Classification**
+   - **Task**: Select **Zero-Shot Classification**
    - **Trust remote code**: Leave unchecked
    - **Hugging Face token secret**: Leave empty (public model)
 

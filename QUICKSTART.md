@@ -32,7 +32,7 @@ See `SECURITY_CONSIDERATIONS.md` for complete details.
 
 3. **microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224**
    - Purpose: Medical image classification (vision-language model)
-   - Output: Image classifications with confidence scores
+   - Task: Zero-Shot Classification
    - Use Case: Classifying X-rays, MRIs, pathology images
 
 ---
