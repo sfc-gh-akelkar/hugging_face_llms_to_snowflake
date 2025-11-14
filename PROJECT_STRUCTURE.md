@@ -46,12 +46,12 @@ requirements.txt                   # Optional Python dependencies
    - Creates ~13,000 lab results
    - Populates ~8,000 medication orders
 
-### Phase 3: Model Import (45-60 minutes)
+### Phase 3: Model Import (30-45 minutes)
 3. **03_import_models_via_ui.md**
    - Import via Snowsight UI (no Python needed)
-   - Model 1: `sentence-transformers/all-MiniLM-L6-v2`
-   - Model 2: `dmis-lab/biobert-v1.1`
-   - Model 3: `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`
+   - Cortex Search: Built-in (no import needed!)
+   - Model 1: `dmis-lab/biobert-v1.1`
+   - Model 2: `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`
 
 ### Phase 4: Use Cases (10 minutes)
 4. **04_use_case_semantic_search.sql**
@@ -69,21 +69,22 @@ requirements.txt                   # Optional Python dependencies
    - Track symptom timelines
    - Detect potential adverse events
 
-## Models Imported
+## Models & Services
 
-### Model 1: MiniLM (Semantic Search)
-- **HuggingFace Handle**: `sentence-transformers/all-MiniLM-L6-v2`
-- **Size**: ~80 MB
-- **Output**: 384-dimensional embeddings
-- **Use**: Find similar clinical notes, semantic search
+### Semantic Search: Snowflake Cortex Search ⭐
+- **Type**: Built-in Snowflake service (no import needed!)
+- **Output**: Relevance-ranked search results
+- **Use**: Find similar clinical notes, natural language search
+- **Advantage**: Zero maintenance, auto-scaling, optimized performance
 
-### Model 2: BioBERT (Entity Extraction)
+### Model 1: BioBERT (Entity Extraction)
 - **HuggingFace Handle**: `dmis-lab/biobert-v1.1`
+- **Task**: Token Classification
 - **Size**: ~420 MB
-- **Output**: 768-dimensional embeddings
-- **Use**: Extract medications, symptoms, diagnoses
+- **Output**: Named entities (medications, symptoms, diagnoses)
+- **Use**: Extract structured data from unstructured notes
 
-### Model 3: BiomedCLIP (Image Classification)
+### Model 2: BiomedCLIP (Image Classification)
 - **HuggingFace Handle**: `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`
 - **Size**: ~500 MB
 - **Output**: Image classifications

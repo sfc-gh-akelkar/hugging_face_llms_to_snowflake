@@ -82,14 +82,11 @@ Automatically extract medications, symptoms, and lab values from clinical docume
 │
 ├── 01_setup_environment.sql           # Snowflake setup (run first)
 ├── 02_create_mock_data.sql            # Generate test data (run second)
+├── 03_import_models_via_ui.md         # Import models via UI (run third)
 │
-├── 03_import_minilm_model.py          # Import sentence-transformers
-├── 04_import_biobert_model.py         # Import BioBERT
-├── 05_import_biomedclip_model.py      # Import BiomedCLIP
-│
-├── 06_use_case_semantic_search.sql    # Use case #1
-├── 07_use_case_oncology_matching.sql  # Use case #2
-└── 08_use_case_entity_extraction.sql  # Use case #3
+├── 04_use_case_semantic_search.sql    # Use case #1: Cortex Search
+├── 05_use_case_oncology_matching.sql  # Use case #2: Patient matching
+└── 06_use_case_entity_extraction.sql  # Use case #3: BioBERT NER
 ```
 
 ---
@@ -306,8 +303,8 @@ SELECT * FROM TABLE(
 **Solution**:
 - Adjust similarity threshold (try 0.6-0.8)
 - Ensure notes have sufficient content
-- Try BioBERT embeddings instead of MiniLM
-- Consider fine-tuning on domain data
+- Adjust Cortex Search relevance thresholds
+- Consider fine-tuning BioBERT on domain-specific data if needed
 
 ---
 

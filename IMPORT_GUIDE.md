@@ -89,19 +89,18 @@ When you import via Snowsight UI, Snowflake automatically:
 
 Copy these exact handles for import:
 
-### Model 1: sentence-transformers/all-MiniLM-L6-v2
-**Handle**: `sentence-transformers/all-MiniLM-L6-v2`  
-**Task**: Feature Extraction  
-**Size**: ~80 MB  
-**Use Case**: Semantic search of clinical notes
+### Semantic Search: Snowflake Cortex Search ⭐
+**No model import needed!** Use built-in Cortex Search service.  
+**Use Case**: Semantic search of clinical notes  
+**See**: `04_use_case_semantic_search.sql` for implementation
 
-### Model 2: dmis-lab/biobert-v1.1
+### Model 1: dmis-lab/biobert-v1.1
 **Handle**: `dmis-lab/biobert-v1.1`  
 **Task**: Token Classification  
 **Size**: ~420 MB  
 **Use Case**: Biomedical named entity recognition (NER)
 
-### Model 3: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
+### Model 2: microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
 **Handle**: `microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224`  
 **Task**: Zero-Shot Classification  
 **Size**: ~500 MB  
@@ -122,42 +121,53 @@ The sections below document the Python/Snowpark method for advanced users who ne
 
 ### Python Method Overview
 
+**Example: Importing BioBERT for Token Classification**
+
 #### Step 1: Download from HuggingFace
 ```python
-from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer, AutoModelForTokenClassification
 import os
 
-# Download model
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+# Download model and tokenizer
+model_name = 'dmis-lab/biobert-v1.1'
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForTokenClassification.from_pretrained(model_name)
 
 # Save to local directory
-model.save('models/minilm-l6-v2')
-print(f"Model saved: {os.path.getsize('models/minilm-l6-v2')} bytes")
+save_dir = 'models/biobert-v1.1'
+tokenizer.save_pretrained(save_dir)
+model.save_pretrained(save_dir)
+print(f"Model saved to: {save_dir}")
 ```
 
 #### Step 2: Create Model Handler
 ```python
 # Create model_handler.py
 import pandas as pd
-from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 
-class MiniLMHandler:
+class BioBERTHandler:
     def __init__(self):
-        self.model = None
+        self.pipeline = None
     
     def load_model(self, model_dir):
-        self.model = SentenceTransformer(model_dir)
+        self.pipeline = pipeline(
+            "token-classification",
+            model=model_dir,
+            tokenizer=model_dir,
+            aggregation_strategy="simple"
+        )
         return self
     
     def predict(self, texts: pd.DataFrame) -> pd.DataFrame:
         """
-        Generate embeddings for input texts
+        Extract named entities from input texts
         """
         sentences = texts['TEXT'].tolist()
-        embeddings = self.model.encode(sentences, convert_to_numpy=True)
+        results = [self.pipeline(text) for text in sentences]
         
         return pd.DataFrame({
-            'EMBEDDING': embeddings.tolist()
+            'ENTITIES': [result for result in results]
         })
 ```
 
@@ -189,8 +199,8 @@ session.sql("""
 
 # Upload model files
 session.file.put(
-    local_file_name="models/minilm-l6-v2/*",
-    stage_location="@MODEL_STAGE/minilm-l6-v2",
+    local_file_name="models/biobert-v1.1/*",
+    stage_location="@MODEL_STAGE/biobert-v1.1",
     auto_compress=True,
     overwrite=True
 )
@@ -204,7 +214,7 @@ registry = ModelRegistry(session=session, database_name="PEDIATRIC_ML", schema_n
 
 # Register model
 model_ref = registry.log_model(
-    model_name="MINILM_EMBEDDINGS",
+    model_name="BIOBERT_NER",
     version_name="v1",
     model_version=model,
     conda_dependencies=["sentence-transformers", "torch"],
@@ -214,37 +224,11 @@ model_ref = registry.log_model(
 print(f"Model registered: {model_ref.fully_qualified_name}")
 ```
 
-#### Step 5: Create UDF for Inference
-```sql
-CREATE OR REPLACE FUNCTION EMBED_TEXT(text VARCHAR)
-RETURNS ARRAY
-LANGUAGE PYTHON
-RUNTIME_VERSION = '3.8'
-PACKAGES = ('sentence-transformers', 'torch', 'transformers')
-HANDLER = 'embed'
-AS
-$$
-from sentence_transformers import SentenceTransformer
-import sys
-
-# Load model from stage
-model = None
-
-def embed(text):
-    global model
-    if model is None:
-        # Load model from stage
-        import_dir = sys._xoptions.get("snowflake_import_directory")
-        model = SentenceTransformer(f"{import_dir}/minilm-l6-v2")
-    
-    embedding = model.encode([text])[0]
-    return embedding.tolist()
-$$;
-```
+**Note**: The above example shows the Python method for advanced users. For most use cases, the UI method (see `03_import_models_via_ui.md`) is recommended as it's simpler and better supported.
 
 ---
 
-## Model 2: dmis-lab/biobert-v1.1
+## Additional Model Examples
 
 ### Model Details
 - **Type**: BERT-based biomedical NER
@@ -488,26 +472,25 @@ biomedclip_ref = registry.log_model(
 
 ## Testing the Models
 
-### Test 1: Semantic Search with MiniLM
+### Test 1: Semantic Search with Cortex Search
 ```sql
--- Find similar clinical notes
-WITH note_embeddings AS (
-    SELECT 
-        NOTE_ID,
-        NOTE_TEXT,
-        EMBED_TEXT(NOTE_TEXT) AS embedding
-    FROM CLINICAL_NOTES
-    LIMIT 1000
-)
-SELECT 
-    n1.NOTE_ID as source_note,
-    n2.NOTE_ID as similar_note,
-    COSINE_SIMILARITY(n1.embedding, n2.embedding) as similarity
-FROM note_embeddings n1
-CROSS JOIN note_embeddings n2
-WHERE n1.NOTE_ID != n2.NOTE_ID
-ORDER BY similarity DESC
-LIMIT 10;
+-- Create Cortex Search service on clinical notes
+CREATE OR REPLACE CORTEX SEARCH SERVICE CLINICAL_NOTES_SEARCH
+ON NOTE_TEXT
+WAREHOUSE = ML_INFERENCE_WH
+TARGET_LAG = '1 day'
+AS (
+    SELECT NOTE_ID, NOTE_TEXT, PATIENT_ID, NOTE_TYPE, NOTE_DATE
+    FROM PEDIATRIC_ML.CLINICAL_DATA.CLINICAL_NOTES
+);
+
+-- Search for similar notes
+SELECT * FROM TABLE(
+    PEDIATRIC_ML.CLINICAL_DATA.CLINICAL_NOTES_SEARCH!SEARCH(
+        'patient with fever and neutropenia',
+        {'limit': 10}
+    )
+);
 ```
 
 ### Test 2: Entity Extraction with BioBERT

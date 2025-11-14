@@ -240,28 +240,7 @@ WHERE FUNCTION_SCHEMA = 'MODELS'
 ORDER BY CREATED DESC;
 ```
 
-### Test MiniLM Embeddings
-
-```sql
--- Example: Generate embeddings for text
-SELECT MINILM_EMBEDDINGS!PREDICT(
-    OBJECT_CONSTRUCT(
-        'inputs', 'Patient presents with fever and fatigue'
-    )
-) AS embedding_result;
-
--- For batch processing
-SELECT 
-    NOTE_ID,
-    NOTE_TEXT,
-    MINILM_EMBEDDINGS!PREDICT(
-        OBJECT_CONSTRUCT('inputs', NOTE_TEXT)
-    ) AS embedding
-FROM CLINICAL_DATA.CLINICAL_NOTES
-LIMIT 10;
-```
-
-### Test BioBERT
+### Test BioBERT Token Classification
 
 ```sql
 -- Extract features from clinical text
@@ -298,21 +277,8 @@ LIMIT 1;
 The deployed services create functions with names like `MODELNAME!PREDICT`. You can create simpler wrapper functions:
 
 ```sql
--- Wrapper for easier embedding generation
-CREATE OR REPLACE FUNCTION EMBED_TEXT(text VARCHAR)
-RETURNS VARIANT
-AS
-$$
-    SELECT MINILM_EMBEDDINGS!PREDICT(
-        OBJECT_CONSTRUCT('inputs', text)
-    )
-$$;
-
--- Test the wrapper
-SELECT EMBED_TEXT('Patient with leukemia on chemotherapy') AS embedding;
-
--- Wrapper for BioBERT
-CREATE OR REPLACE FUNCTION EXTRACT_BIOMEDICAL_FEATURES(text VARCHAR)
+-- Wrapper for BioBERT entity extraction
+CREATE OR REPLACE FUNCTION EXTRACT_BIOMEDICAL_ENTITIES(text VARCHAR)
 RETURNS VARIANT
 AS
 $$
@@ -320,6 +286,9 @@ $$
         OBJECT_CONSTRUCT('inputs', text)
     )
 $$;
+
+-- Test the wrapper
+SELECT EXTRACT_BIOMEDICAL_ENTITIES('Patient with leukemia on vincristine and prednisone') AS entities;
 ```
 
 ---
@@ -333,29 +302,30 @@ $$;
 SHOW SERVICES IN COMPUTE POOL ML_INFERENCE_POOL;
 
 -- Get service details
-DESCRIBE SERVICE MINILM_EMBEDDINGS_SERVICE;
+DESCRIBE SERVICE BIOBERT_NER_SERVICE;
+DESCRIBE SERVICE BIOMEDCLIP_SERVICE;
 ```
 
 ### Suspend/Resume Services
 
 ```sql
--- Suspend service to save costs
-ALTER SERVICE MINILM_EMBEDDINGS_SERVICE SUSPEND;
+-- Suspend service to save costs when not in use
+ALTER SERVICE BIOBERT_NER_SERVICE SUSPEND;
 
--- Resume service
-ALTER SERVICE MINILM_EMBEDDINGS_SERVICE RESUME;
+-- Resume service when needed
+ALTER SERVICE BIOBERT_NER_SERVICE RESUME;
 ```
 
 ### Update Service Configuration
 
 ```sql
--- Scale up instances
-ALTER SERVICE MINILM_EMBEDDINGS_SERVICE 
+-- Scale up instances for higher load
+ALTER SERVICE BIOBERT_NER_SERVICE 
     SET MIN_INSTANCES = 2, MAX_INSTANCES = 5;
 
--- Modify compute resources
-ALTER SERVICE MINILM_EMBEDDINGS_SERVICE
-    SET COMPUTE POOL = LARGER_POOL;
+-- Modify compute pool if needed
+ALTER SERVICE BIOBERT_NER_SERVICE
+    SET COMPUTE POOL = ML_INFERENCE_POOL;
 ```
 
 ---

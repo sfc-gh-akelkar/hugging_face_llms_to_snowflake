@@ -3,7 +3,7 @@
 -- ============================================================================
 -- Purpose: Match pediatric oncology patients to similar cases for treatment
 --          planning and outcome prediction
--- Models: MiniLM (semantic search) + BioBERT (entity extraction)
+-- Models: Cortex Search (semantic search) + BioBERT (entity extraction)
 -- Use Case: Help oncologists find similar patients and analyze treatment patterns
 -- ============================================================================
 
