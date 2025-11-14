@@ -34,41 +34,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Lurie Children's Hospital branding
+# Custom CSS for professional medical app styling
 st.markdown("""
 <style>
-    /* Lurie Children's color palette */
+    /* Professional medical color palette */
     :root {
-        --lurie-blue: #0066B3;
-        --lurie-dark-blue: #003C71;
-        --lurie-light-blue: #4A90E2;
-        --lurie-teal: #00A499;
-        --lurie-orange: #F47920;
-        --lurie-warm-gray: #F5F5F5;
-        --lurie-medium-gray: #E0E0E0;
+        --primary-blue: #0066B3;
+        --dark-blue: #003C71;
+        --light-blue: #4A90E2;
+        --teal: #00A499;
+        --orange: #F47920;
+        --warm-gray: #F5F5F5;
+        --medium-gray: #E0E0E0;
     }
     
     /* Main header styling */
     .main-header {
         font-size: 2.5rem;
-        color: var(--lurie-blue);
+        color: var(--primary-blue);
         font-weight: 600;
         text-align: center;
         padding: 1.5rem;
-        background: linear-gradient(135deg, var(--lurie-warm-gray) 0%, #ffffff 100%);
+        background: linear-gradient(135deg, var(--warm-gray) 0%, #ffffff 100%);
         border-radius: 10px;
         margin-bottom: 1.5rem;
-        border-left: 5px solid var(--lurie-orange);
+        border-left: 5px solid var(--orange);
     }
     
     /* Sidebar styling */
     .css-1d391kg {
-        background-color: var(--lurie-warm-gray);
+        background-color: var(--warm-gray);
     }
     
     /* Button styling */
     .stButton > button {
-        background-color: var(--lurie-blue);
+        background-color: var(--primary-blue);
         color: white;
         border-radius: 8px;
         border: none;
@@ -78,14 +78,14 @@ st.markdown("""
     }
     
     .stButton > button:hover {
-        background-color: var(--lurie-dark-blue);
+        background-color: var(--dark-blue);
         box-shadow: 0 4px 8px rgba(0, 102, 179, 0.3);
     }
     
     /* Metric cards */
     .css-1xarl3l {
-        background-color: var(--lurie-warm-gray);
-        border-left: 4px solid var(--lurie-teal);
+        background-color: var(--warm-gray);
+        border-left: 4px solid var(--teal);
         border-radius: 8px;
         padding: 1rem;
     }
@@ -93,7 +93,7 @@ st.markdown("""
     /* Info boxes */
     .stAlert {
         border-radius: 8px;
-        border-left: 4px solid var(--lurie-blue);
+        border-left: 4px solid var(--primary-blue);
     }
     
     /* Chat messages */
@@ -101,31 +101,31 @@ st.markdown("""
         padding: 1.2rem;
         border-radius: 10px;
         margin: 1rem 0;
-        border-left: 4px solid var(--lurie-teal);
+        border-left: 4px solid var(--teal);
     }
     
     .user-message {
         background-color: #E3F2FD;
-        border-left-color: var(--lurie-blue);
+        border-left-color: var(--primary-blue);
     }
     
     .assistant-message {
-        background-color: var(--lurie-warm-gray);
-        border-left-color: var(--lurie-orange);
+        background-color: var(--warm-gray);
+        border-left-color: var(--orange);
     }
     
     /* Success message styling */
     .stSuccess {
         background-color: #E8F5E9;
-        border-left: 4px solid var(--lurie-teal);
+        border-left: 4px solid var(--teal);
         border-radius: 8px;
     }
     
     /* Expander styling */
     .streamlit-expanderHeader {
-        background-color: var(--lurie-warm-gray);
+        background-color: var(--warm-gray);
         border-radius: 8px;
-        color: var(--lurie-dark-blue);
+        color: var(--dark-blue);
         font-weight: 500;
     }
     
@@ -135,31 +135,31 @@ st.markdown("""
     }
     
     .stTabs [data-baseweb="tab"] {
-        background-color: var(--lurie-warm-gray);
+        background-color: var(--warm-gray);
         border-radius: 8px 8px 0 0;
-        color: var(--lurie-dark-blue);
+        color: var(--dark-blue);
         font-weight: 500;
         padding: 12px 24px;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: var(--lurie-medium-gray);
+        background-color: var(--medium-gray);
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: var(--lurie-blue);
+        background-color: var(--primary-blue);
         color: white;
     }
     
     /* Text input styling */
     .stTextInput > div > div > input {
         border-radius: 8px;
-        border: 2px solid var(--lurie-medium-gray);
+        border: 2px solid var(--medium-gray);
         padding: 0.75rem;
     }
     
     .stTextInput > div > div > input:focus {
-        border-color: var(--lurie-blue);
+        border-color: var(--primary-blue);
         box-shadow: 0 0 0 2px rgba(0, 102, 179, 0.1);
     }
     
@@ -175,7 +175,7 @@ st.markdown("""
     
     /* Dataframe styling */
     .dataframe {
-        border: 1px solid var(--lurie-medium-gray);
+        border: 1px solid var(--medium-gray);
         border-radius: 8px;
     }
     
@@ -187,17 +187,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Lurie Children's color palette for charts
-LURIE_COLORS = {
-    'primary': '#0066B3',      # Lurie Blue
-    'secondary': '#00A499',    # Lurie Teal
-    'accent': '#F47920',       # Lurie Orange
+# Professional medical color palette for charts
+APP_COLORS = {
+    'primary': '#0066B3',      # Primary Blue
+    'secondary': '#00A499',    # Teal
+    'accent': '#F47920',       # Orange
     'dark': '#003C71',         # Dark Blue
     'light': '#4A90E2',        # Light Blue
     'gray': '#F5F5F5'          # Warm Gray
 }
 
-LURIE_COLOR_SCALE = ['#0066B3', '#00A499', '#4A90E2', '#F47920', '#003C71']
+COLOR_SCALE = ['#0066B3', '#00A499', '#4A90E2', '#F47920', '#003C71']
 
 # ============================================================================
 # SIDEBAR - NAVIGATION
@@ -237,8 +237,8 @@ st.sidebar.markdown(
     ---
     
     **📚 Resources:**
-    - [Lurie Children's Research](https://research.luriechildrens.org/)
     - [Snowflake Cortex](https://docs.snowflake.com/cortex)
+    - [HuggingFace Models](https://huggingface.co/models)
     """
 )
 
@@ -442,7 +442,7 @@ if page == "🔍 Clinical Search":
                             fig = px.pie(
                                 values=note_type_counts.values,
                                 names=note_type_counts.index,
-                                color_discrete_sequence=LURIE_COLOR_SCALE
+                                color_discrete_sequence=COLOR_SCALE
                             )
                             fig.update_layout(
                                 font=dict(family="Arial, sans-serif", size=12),
@@ -460,7 +460,7 @@ if page == "🔍 Clinical Search":
                                 x='Date',
                                 y='Count',
                                 markers=True,
-                                color_discrete_sequence=[LURIE_COLORS['primary']]
+                                color_discrete_sequence=[APP_COLORS['primary']]
                             )
                             fig2.update_layout(
                                 font=dict(family="Arial, sans-serif", size=12),
@@ -627,7 +627,7 @@ elif page == "📊 Analytics Dashboard":
             x='DEPARTMENT',
             y='PATIENT_COUNT',
             color='PATIENT_COUNT',
-            color_continuous_scale=[[0, LURIE_COLORS['light']], [1, LURIE_COLORS['primary']]]
+            color_continuous_scale=[[0, APP_COLORS['light']], [1, APP_COLORS['primary']]]
         )
         fig_dept.update_layout(
             showlegend=False,
@@ -647,7 +647,7 @@ elif page == "📊 Analytics Dashboard":
             values='COUNT',
             names='PRIMARY_DIAGNOSIS',
             hole=0.4,
-            color_discrete_sequence=LURIE_COLOR_SCALE
+            color_discrete_sequence=COLOR_SCALE
         )
         fig_dx.update_layout(
             font=dict(family="Arial, sans-serif", size=12),
@@ -670,7 +670,7 @@ elif page == "📊 Analytics Dashboard":
         x='AGE_YEARS',
         y='COUNT',
         nbins=18,
-        color_discrete_sequence=[LURIE_COLORS['secondary']]
+        color_discrete_sequence=[APP_COLORS['secondary']]
     )
     fig_age.update_layout(
         xaxis_title="Age (years)",
@@ -700,7 +700,7 @@ elif page == "📊 Analytics Dashboard":
         x='DATE',
         y='NOTE_COUNT',
         markers=True,
-        color_discrete_sequence=[LURIE_COLORS['accent']]
+        color_discrete_sequence=[APP_COLORS['accent']]
     )
     fig_activity.update_layout(
         xaxis_title="Date",
@@ -801,7 +801,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
     <div style='text-align: center; color: #0066B3; font-size: 0.85rem;'>
-        <strong>🏥 Ann & Robert H. Lurie Children's Hospital</strong><br>
+        <strong>🏥 Pediatric Hospital</strong><br>
         <span style='color: #666;'>Clinical Intelligence Platform</span><br>
         <span style='font-size: 0.75rem; color: #999;'>
             Powered by Snowflake Cortex & HuggingFace Models<br>
