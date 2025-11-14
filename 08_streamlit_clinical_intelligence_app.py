@@ -34,28 +34,170 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for hospital branding
+# Custom CSS for Lurie Children's Hospital branding
 st.markdown("""
 <style>
+    /* Lurie Children's color palette */
+    :root {
+        --lurie-blue: #0066B3;
+        --lurie-dark-blue: #003C71;
+        --lurie-light-blue: #4A90E2;
+        --lurie-teal: #00A499;
+        --lurie-orange: #F47920;
+        --lurie-warm-gray: #F5F5F5;
+        --lurie-medium-gray: #E0E0E0;
+    }
+    
+    /* Main header styling */
     .main-header {
         font-size: 2.5rem;
-        color: #1f77b4;
+        color: var(--lurie-blue);
+        font-weight: 600;
         text-align: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, var(--lurie-warm-gray) 0%, #ffffff 100%);
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border-left: 5px solid var(--lurie-orange);
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background-color: var(--lurie-warm-gray);
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background-color: var(--lurie-blue);
+        color: white;
+        border-radius: 8px;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background-color: var(--lurie-dark-blue);
+        box-shadow: 0 4px 8px rgba(0, 102, 179, 0.3);
+    }
+    
+    /* Metric cards */
+    .css-1xarl3l {
+        background-color: var(--lurie-warm-gray);
+        border-left: 4px solid var(--lurie-teal);
+        border-radius: 8px;
         padding: 1rem;
     }
+    
+    /* Info boxes */
+    .stAlert {
+        border-radius: 8px;
+        border-left: 4px solid var(--lurie-blue);
+    }
+    
+    /* Chat messages */
     .chat-message {
-        padding: 1rem;
-        border-radius: 0.5rem;
+        padding: 1.2rem;
+        border-radius: 10px;
         margin: 1rem 0;
+        border-left: 4px solid var(--lurie-teal);
     }
+    
     .user-message {
-        background-color: #e3f2fd;
+        background-color: #E3F2FD;
+        border-left-color: var(--lurie-blue);
     }
+    
     .assistant-message {
-        background-color: #f5f5f5;
+        background-color: var(--lurie-warm-gray);
+        border-left-color: var(--lurie-orange);
+    }
+    
+    /* Success message styling */
+    .stSuccess {
+        background-color: #E8F5E9;
+        border-left: 4px solid var(--lurie-teal);
+        border-radius: 8px;
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background-color: var(--lurie-warm-gray);
+        border-radius: 8px;
+        color: var(--lurie-dark-blue);
+        font-weight: 500;
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: var(--lurie-warm-gray);
+        border-radius: 8px 8px 0 0;
+        color: var(--lurie-dark-blue);
+        font-weight: 500;
+        padding: 12px 24px;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: var(--lurie-medium-gray);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: var(--lurie-blue);
+        color: white;
+    }
+    
+    /* Text input styling */
+    .stTextInput > div > div > input {
+        border-radius: 8px;
+        border: 2px solid var(--lurie-medium-gray);
+        padding: 0.75rem;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: var(--lurie-blue);
+        box-shadow: 0 0 0 2px rgba(0, 102, 179, 0.1);
+    }
+    
+    /* Selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 8px;
+    }
+    
+    /* Container borders */
+    .element-container {
+        border-radius: 8px;
+    }
+    
+    /* Dataframe styling */
+    .dataframe {
+        border: 1px solid var(--lurie-medium-gray);
+        border-radius: 8px;
+    }
+    
+    /* Plotly charts */
+    .js-plotly-plot {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Lurie Children's color palette for charts
+LURIE_COLORS = {
+    'primary': '#0066B3',      # Lurie Blue
+    'secondary': '#00A499',    # Lurie Teal
+    'accent': '#F47920',       # Lurie Orange
+    'dark': '#003C71',         # Dark Blue
+    'light': '#4A90E2',        # Light Blue
+    'gray': '#F5F5F5'          # Warm Gray
+}
+
+LURIE_COLOR_SCALE = ['#0066B3', '#00A499', '#4A90E2', '#F47920', '#003C71']
 
 # ============================================================================
 # SIDEBAR - NAVIGATION
@@ -70,16 +212,33 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.info(
+st.sidebar.markdown(
     """
-    **About This App**
+    ### 🏥 About This App
     
-    This application uses:
-    - Snowflake Cortex Search for semantic search
-    - BioBERT for entity extraction
-    - BiomedCLIP for image classification
+    **Pediatric Clinical Intelligence**  
+    *Powered by AI & Machine Learning*
     
-    All data stays within Snowflake.
+    **Models & Services:**
+    - 🔍 Snowflake Cortex Search  
+      *Semantic clinical note search*
+    - 🧬 BioBERT  
+      *Medical entity extraction*
+    - 🖼️ BiomedCLIP  
+      *Image classification*
+    
+    ---
+    
+    **🔒 Security:**  
+    ✅ All data stays in Snowflake  
+    ✅ HIPAA compliant  
+    ✅ No external API calls with PHI
+    
+    ---
+    
+    **📚 Resources:**
+    - [Lurie Children's Research](https://research.luriechildrens.org/)
+    - [Snowflake Cortex](https://docs.snowflake.com/cortex)
     """
 )
 
@@ -280,14 +439,36 @@ if page == "🔍 Clinical Search":
                             # Visualize results
                             st.subheader("Results by Note Type")
                             note_type_counts = results['NOTE_TYPE'].value_counts()
-                            fig = px.pie(values=note_type_counts.values, names=note_type_counts.index)
+                            fig = px.pie(
+                                values=note_type_counts.values,
+                                names=note_type_counts.index,
+                                color_discrete_sequence=LURIE_COLOR_SCALE
+                            )
+                            fig.update_layout(
+                                font=dict(family="Arial, sans-serif", size=12),
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)'
+                            )
                             st.plotly_chart(fig, use_container_width=True)
                             
                             st.subheader("Results Timeline")
                             results['NOTE_DATE'] = pd.to_datetime(results['NOTE_DATE'])
                             timeline_data = results.groupby(results['NOTE_DATE'].dt.date).size().reset_index()
                             timeline_data.columns = ['Date', 'Count']
-                            fig2 = px.line(timeline_data, x='Date', y='Count', markers=True)
+                            fig2 = px.line(
+                                timeline_data,
+                                x='Date',
+                                y='Count',
+                                markers=True,
+                                color_discrete_sequence=[LURIE_COLORS['primary']]
+                            )
+                            fig2.update_layout(
+                                font=dict(family="Arial, sans-serif", size=12),
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='#E0E0E0'),
+                                yaxis=dict(showgrid=True, gridcolor='#E0E0E0')
+                            )
                             st.plotly_chart(fig2, use_container_width=True)
                     
                     else:
@@ -446,9 +627,16 @@ elif page == "📊 Analytics Dashboard":
             x='DEPARTMENT',
             y='PATIENT_COUNT',
             color='PATIENT_COUNT',
-            color_continuous_scale='Blues'
+            color_continuous_scale=[[0, LURIE_COLORS['light']], [1, LURIE_COLORS['primary']]]
         )
-        fig_dept.update_layout(showlegend=False)
+        fig_dept.update_layout(
+            showlegend=False,
+            font=dict(family="Arial, sans-serif", size=12),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=True, gridcolor='#E0E0E0')
+        )
         st.plotly_chart(fig_dept, use_container_width=True)
     
     with col_b:
@@ -458,7 +646,13 @@ elif page == "📊 Analytics Dashboard":
             diagnosis_dist,
             values='COUNT',
             names='PRIMARY_DIAGNOSIS',
-            hole=0.4
+            hole=0.4,
+            color_discrete_sequence=LURIE_COLOR_SCALE
+        )
+        fig_dx.update_layout(
+            font=dict(family="Arial, sans-serif", size=12),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
         )
         st.plotly_chart(fig_dx, use_container_width=True)
     
@@ -471,8 +665,22 @@ elif page == "📊 Analytics Dashboard":
     ORDER BY AGE_YEARS
     """
     age_data = session.sql(sql_age).to_pandas()
-    fig_age = px.histogram(age_data, x='AGE_YEARS', y='COUNT', nbins=18)
-    fig_age.update_layout(xaxis_title="Age (years)", yaxis_title="Patient Count")
+    fig_age = px.histogram(
+        age_data,
+        x='AGE_YEARS',
+        y='COUNT',
+        nbins=18,
+        color_discrete_sequence=[LURIE_COLORS['secondary']]
+    )
+    fig_age.update_layout(
+        xaxis_title="Age (years)",
+        yaxis_title="Patient Count",
+        font=dict(family="Arial, sans-serif", size=12),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor='#E0E0E0')
+    )
     st.plotly_chart(fig_age, use_container_width=True)
     
     # Recent activity
@@ -487,8 +695,22 @@ elif page == "📊 Analytics Dashboard":
     ORDER BY date
     """
     activity_data = session.sql(sql_activity).to_pandas()
-    fig_activity = px.line(activity_data, x='DATE', y='NOTE_COUNT', markers=True)
-    fig_activity.update_layout(xaxis_title="Date", yaxis_title="Notes Created")
+    fig_activity = px.line(
+        activity_data,
+        x='DATE',
+        y='NOTE_COUNT',
+        markers=True,
+        color_discrete_sequence=[LURIE_COLORS['accent']]
+    )
+    fig_activity.update_layout(
+        xaxis_title="Date",
+        yaxis_title="Notes Created",
+        font=dict(family="Arial, sans-serif", size=12),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(showgrid=True, gridcolor='#E0E0E0'),
+        yaxis=dict(showgrid=True, gridcolor='#E0E0E0')
+    )
     st.plotly_chart(fig_activity, use_container_width=True)
 
 # ============================================================================
@@ -576,7 +798,17 @@ elif page == "💊 Entity Extraction":
 # ============================================================================
 
 st.sidebar.markdown("---")
-st.sidebar.caption("🏥 Pediatric Clinical Intelligence System")
-st.sidebar.caption("Powered by Snowflake Cortex & HuggingFace Models")
-st.sidebar.caption("All data remains within Snowflake | HIPAA Compliant")
+st.sidebar.markdown(
+    """
+    <div style='text-align: center; color: #0066B3; font-size: 0.85rem;'>
+        <strong>🏥 Ann & Robert H. Lurie Children's Hospital</strong><br>
+        <span style='color: #666;'>Clinical Intelligence Platform</span><br>
+        <span style='font-size: 0.75rem; color: #999;'>
+            Powered by Snowflake Cortex & HuggingFace Models<br>
+            All PHI remains secure in Snowflake | HIPAA Compliant
+        </span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
